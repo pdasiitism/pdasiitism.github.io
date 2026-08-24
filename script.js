@@ -61,6 +61,10 @@ const skillList = document.querySelector("#skill-list");
 const skillTitle = document.querySelector("#skill-title");
 const meterRing = document.querySelector("#meter-ring");
 const meterValue = document.querySelector("#meter-value");
+const portraitTrack = document.querySelector("#portrait-track");
+const portraitDots = [...document.querySelectorAll("[data-photo-dot]")];
+const portraitNavButtons = [...document.querySelectorAll("[data-photo-nav]")];
+let activePhoto = 0;
 
 function renderPublications(filter = "All") {
   const selected =
@@ -136,5 +140,26 @@ filterButtons.forEach((button) => {
   });
 });
 
+function showPhoto(index) {
+  activePhoto = (index + portraitDots.length) % portraitDots.length;
+  portraitTrack.style.transform = `translateX(-${activePhoto * 50}%)`;
+  portraitDots.forEach((dot, dotIndex) => {
+    dot.classList.toggle("active", dotIndex === activePhoto);
+  });
+}
+
+portraitNavButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    showPhoto(activePhoto + (button.dataset.photoNav === "next" ? 1 : -1));
+  });
+});
+
+portraitDots.forEach((dot) => {
+  dot.addEventListener("click", () => {
+    showPhoto(Number(dot.dataset.photoDot));
+  });
+});
+
 renderPublications();
 renderSkills();
+showPhoto(0);

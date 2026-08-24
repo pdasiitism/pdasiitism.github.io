@@ -187,38 +187,88 @@ h1 {
   margin-bottom: 18px;
 }
 
-.portrait-photo {
+.portrait-carousel {
   aspect-ratio: 4 / 5;
   border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.portrait-track {
+  display: flex;
+  height: 100%;
+  transition: transform 260ms ease;
+  width: 200%;
+}
+
+.portrait-photo {
+  aspect-ratio: 4 / 5;
   display: block;
-  margin-bottom: 18px;
+  flex: 0 0 50%;
+  height: 100%;
   object-fit: cover;
   object-position: center 22%;
   width: 100%;
 }
 
-.secondary-photo {
-  align-items: center;
-  border-top: 1px solid var(--line);
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 76px 1fr;
-  margin: 18px 0 0;
-  padding-top: 18px;
-}
-
-.secondary-photo img {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  object-fit: cover;
+.portrait-photo:nth-child(2) {
   object-position: center 30%;
-  width: 76px;
 }
 
-.secondary-photo figcaption {
-  color: var(--ink-muted);
-  font-size: 0.86rem;
-  font-weight: 850;
+.portrait-nav {
+  align-items: center;
+  background: rgba(23, 27, 31, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  font-size: 1.8rem;
+  font-weight: 800;
+  height: 42px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+}
+
+.portrait-prev {
+  left: 12px;
+}
+
+.portrait-next {
+  right: 12px;
+}
+
+.portrait-nav:focus-visible,
+.portrait-nav:hover {
+  background: var(--accent);
+  outline: none;
+}
+
+.portrait-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.portrait-dots button {
+  background: #c8d3cf;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 9px;
+  padding: 0;
+  width: 28px;
+}
+
+.portrait-dots button.active {
+  background: var(--accent);
 }
 
 .availability {
