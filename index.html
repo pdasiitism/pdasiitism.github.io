@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prabal Das, Ph.D. | Interactive CV</title>
+    <meta
+      name="description"
+      content="An interactive academic CV for hydro-meteorology, climate science, AI weather forecasting, and Bayesian-network research."
+    />
+    <meta property="og:title" content="Prabal Das, Ph.D. | Interactive CV" />
+    <meta
+      property="og:description"
+      content="Explore research focus areas, publications, skills, experience, education, awards, and contact details."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Prabal Das, Ph.D. | Interactive CV" />
+    <meta
+      name="twitter:description"
+      content="Explore research focus areas, publications, skills, experience, education, awards, and contact details."
+    />
+    <meta name="twitter:image" content="assets/og.png" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="profile-site">
+      <section class="hero-section" aria-labelledby="profile-title">
+        <nav class="topbar" aria-label="Profile navigation">
+          <a href="#research">Research</a>
+          <a href="#skills">Skills</a>
+          <a href="#experience">Experience</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Interactive Academic CV</p>
+            <h1 id="profile-title">Prabal Das, Ph.D.</h1>
+            <p class="hero-summary">
+              Hydro-meteorology, climate science, and AI weather forecasting
+              researcher building machine-learning and Bayesian-network methods
+              for rainfall, streamflow, drought, and precipitation-type
+              prediction.
+            </p>
+            <div class="hero-actions" aria-label="Primary profile actions">
+              <a class="primary-action" href="#research">Explore Research</a>
+              <a class="secondary-action" href="mailto:prabal@uchicagotrust.org">
+                Contact
+              </a>
+            </div>
+          </div>
+
+          <aside class="impact-panel" aria-label="Career snapshot">
+            <div class="portrait-mark" aria-hidden="true">PD</div>
+            <div class="availability">
+              <span class="status-dot"></span>
+              Lead Researcher, Human Centered Weather Forecasting
+            </div>
+            <dl class="impact-stats">
+              <div>
+                <dt>Peer-reviewed papers</dt>
+                <dd>9</dd>
+              </div>
+              <div>
+                <dt>Research themes</dt>
+                <dd>3</dd>
+              </div>
+              <div>
+                <dt>Current base</dt>
+                <dd>India</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section-band research-band" id="research">
+        <div class="section-heading">
+          <p class="eyebrow">Research Portfolio</p>
+          <h2>Filter selected publications by focus area</h2>
+        </div>
+
+        <div class="segmented-control" aria-label="Filter publications">
+          <button class="active" data-filter="All" type="button">All</button>
+          <button data-filter="Forecasting" type="button">Forecasting</button>
+          <button data-filter="Hydrology" type="button">Hydrology</button>
+          <button data-filter="Climate Risk" type="button">Climate Risk</button>
+        </div>
+
+        <div class="publication-grid" id="publication-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="section-band skills-band" id="skills">
+        <div class="section-heading">
+          <p class="eyebrow">Core Competencies</p>
+          <h2>Tap a capability to inspect emphasis</h2>
+        </div>
+
+        <div class="skills-layout">
+          <div class="skill-meter" aria-label="Selected capability strength">
+            <div class="meter-ring" id="meter-ring" style="--meter-value: 96%">
+              <span id="meter-value">96</span>
+            </div>
+            <div>
+              <h3 id="skill-title">Hydro-meteorology</h3>
+              <p>
+                Built across research in supervised learning, deep learning,
+                time-series forecasting, numerical weather prediction, NetCDF,
+                Grib, GIS, and high-performance computing environments.
+              </p>
+            </div>
+          </div>
+
+          <div class="skill-list" id="skill-list" role="list"></div>
+        </div>
+      </section>
+
+      <section class="section-band experience-band" id="experience">
+        <div class="section-heading">
+          <p class="eyebrow">Experience</p>
+          <h2>Research, teaching, and applied delivery</h2>
+        </div>
+        <div class="timeline">
+          <article>
+            <span>Apr 2026 - Present</span>
+            <div>
+              <h3>Lead Researcher, Human Centered Weather Forecasting</h3>
+              <p>Development Innovation Lab - India, University of Chicago Trust · India</p>
+            </div>
+          </article>
+          <article>
+            <span>Dec 2023 - Mar 2026</span>
+            <div>
+              <h3>Post-Doctoral Research Associate</h3>
+              <p>Department of Civil Engineering, The University of Texas · Arlington, USA</p>
+            </div>
+          </article>
+          <article>
+            <span>Summer 2025 and Fall 2025-26</span>
+            <div>
+              <h3>Adjunct Professor</h3>
+              <p>Department of Civil Engineering, The University of Texas · Arlington, USA</p>
+            </div>
+          </article>
+          <article>
+            <span>2017 - 2018</span>
+            <div>
+              <h3>Assistant Professor</h3>
+              <p>Vignan Institute of Technology and Science; IMPS College · India</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-band split-band">
+        <div>
+          <div class="section-heading">
+            <p class="eyebrow">Education</p>
+            <h2>Academic foundation</h2>
+          </div>
+          <div class="education-list">
+            <article>
+              <span>2018 - 2024</span>
+              <h3>Ph.D., Engineering</h3>
+              <p>Indian Institute of Technology (ISM) - Dhanbad</p>
+              <small>
+                Thesis on feature selection with Bayesian networks for
+                hydrometeorological understanding and prediction.
+              </small>
+            </article>
+            <article>
+              <span>2015 - 2017</span>
+              <h3>M.Tech, Water Resources Engineering and Management</h3>
+              <p>National Institute of Technology Karnataka - Surathkal</p>
+              <small>CGPA: 8.53/10</small>
+            </article>
+            <article>
+              <span>2010 - 2014</span>
+              <h3>B.Tech, Civil Engineering</h3>
+              <p>West Bengal University of Technology, Kolkata</p>
+              <small>CGPA: 8.3/10</small>
+            </article>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-heading">
+            <p class="eyebrow">Recognition</p>
+            <h2>Awards and service</h2>
+          </div>
+          <ul class="recognition-list">
+            <li>
+              Reviewer for Journal of Hydrology, SERRA, Earth Science
+              Informatics, Journal of Hydrologic Engineering, Theoretical and
+              Applied Climatology, AMS Journals, and related venues.
+            </li>
+            <li>DST SERB Travel Grant for AGU 2022 and EGU 2023.</li>
+            <li>
+              Government of India - Ministry of Education Fellowship for
+              doctoral and M.Tech studies.
+            </li>
+            <li>
+              Certified in Microsoft Azure Cloud Services and Google Earth
+              Engine Applications.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section-band conference-band">
+        <div class="section-heading">
+          <p class="eyebrow">Presentations</p>
+          <h2>Conference and workshop highlights</h2>
+        </div>
+        <div class="conference-grid">
+          <article>
+            <span>01</span>
+            <p>
+              Physics-guided machine-learning post-processing for wintertime
+              precipitation type forecasting, AMS Annual Meeting 2026.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <p>
+              Extreme rainfall predictability and forecast-informed reservoir
+              operations, AMS Annual Meeting 2026.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <p>
+              Optimal GCM ensembles of high-resolution precipitation datasets
+              through Bayesian networks and U-Net analysis, HYDRO 2025.
+            </p>
+          </article>
+          <article>
+            <span>04</span>
+            <p>Enhancing precipitation type classification using random forests, UIFCW 2024.</p>
+          </article>
+          <article>
+            <span>05</span>
+            <p>Bayesian networks for regional rainfall prediction, AGU Fall Meeting 2022.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="contact-section" id="contact">
+        <div>
+          <p class="eyebrow">Contact</p>
+          <h2>Connect with Prabal</h2>
+          <p>
+            Email, phone, ORCID, Google Scholar, LinkedIn, and ResearchGate are
+            surfaced from the CV and profile links.
+          </p>
+        </div>
+        <div class="contact-links">
+          <div class="contact-actions" aria-label="Contact links">
+            <a class="primary-action" href="mailto:prabal@uchicagotrust.org">
+              prabal@uchicagotrust.org
+            </a>
+            <a class="secondary-action" href="mailto:prabal.nitk@gmail.com">
+              prabal.nitk@gmail.com
+            </a>
+            <a class="secondary-action" href="tel:+919609913479">
+              +91 9609913479
+            </a>
+          </div>
+          <div class="profile-link-grid" aria-label="Research profile links">
+            <a href="https://orcid.org/0000-0003-3009-942X" rel="noreferrer" target="_blank">ORCID</a>
+            <a href="https://www.linkedin.com/in/prabal-das-453b61125/" rel="noreferrer" target="_blank">LinkedIn</a>
+            <a href="https://scholar.google.com/citations?user=tzNdVMMAAAAJ&amp;hl=en" rel="noreferrer" target="_blank">Google Scholar</a>
+            <a href="https://www.researchgate.net/profile/Prabal-Das?ev=hdr_xprf" rel="noreferrer" target="_blank">ResearchGate</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
