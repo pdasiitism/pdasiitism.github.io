@@ -1044,30 +1044,6 @@ h1 {
   text-transform: uppercase;
 }
 
-.map-marker {
-  cursor: help;
-}
-
-.map-marker circle {
-  stroke: rgba(255, 255, 255, 0.95);
-  stroke-width: 3;
-  vector-effect: non-scaling-stroke;
-}
-
-.map-marker text {
-  fill: #fff;
-  font-size: 20px;
-  font-weight: 950;
-  pointer-events: none;
-  text-anchor: middle;
-}
-
-.map-marker:focus-visible,
-.map-marker:hover {
-  outline: 3px solid rgba(23, 27, 31, 0.26);
-  outline-offset: 2px;
-}
-
 .india-map-card footer {
   align-items: center;
   display: flex;

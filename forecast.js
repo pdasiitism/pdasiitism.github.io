@@ -47,6 +47,9 @@ const cityVariables = [
   "cloud_cover",
   "pressure_msl",
 ];
+const mapVariables = ["temperature_2m", "precipitation"];
+const mapGridStepDegrees = 1;
+const requestBatchSize = 60;
 
 const models = {
   gfs: {
@@ -74,6 +77,7 @@ const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
 let indiaBoundary = null;
 let currentMapPoints = [];
+let indiaGridPoints = null;
 
 function populateCities() {
   citySelect.innerHTML = cityLocations
@@ -122,9 +126,74 @@ function boundaryPaths() {
     .join("");
 }
 
-function markerPosition(point) {
+function pointPosition(point) {
   const [x, y] = projectPoint([point.longitude, point.latitude]);
   return { x, y };
+}
+
+function pointInRing(longitude, latitude, ring) {
+  let inside = false;
+
+  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
+    const [currentLon, currentLat] = ring[index];
+    const [previousLon, previousLat] = ring[previous];
+    const intersects =
+      currentLat > latitude !== previousLat > latitude &&
+      longitude <
+        ((previousLon - currentLon) * (latitude - currentLat)) /
+          (previousLat - currentLat) +
+          currentLon;
+
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+}
+
+function pointInFeature(longitude, latitude, feature) {
+  return feature.geometry.coordinates.some((ring) =>
+    pointInRing(longitude, latitude, ring),
+  );
+}
+
+function pointInIndia(longitude, latitude) {
+  return indiaBoundary.features.some((feature) =>
+    pointInFeature(longitude, latitude, feature),
+  );
+}
+
+function buildIndiaGrid() {
+  if (indiaGridPoints) {
+    return indiaGridPoints;
+  }
+
+  const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
+  const points = [];
+
+  for (
+    let latitude = Math.floor(minLat);
+    latitude <= Math.ceil(maxLat);
+    latitude += mapGridStepDegrees
+  ) {
+    for (
+      let longitude = Math.floor(minLon);
+      longitude <= Math.ceil(maxLon);
+      longitude += mapGridStepDegrees
+    ) {
+      if (pointInIndia(longitude, latitude)) {
+        points.push({
+          name: `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`,
+          latitude,
+          longitude,
+        });
+      }
+    }
+  }
+
+  indiaGridPoints = points;
+  return indiaGridPoints;
 }
 
 function nearestIndex(times, targetDate) {
@@ -163,58 +232,26 @@ function rainfallColor(value) {
   return "#6a1b9a";
 }
 
-function markerSize(type, value) {
-  if (type === "temperature") {
-    return 15;
-  }
-
-  return clamp(10 + Math.sqrt(Math.max(value, 0)) * 5, 10, 30);
-}
-
-function inverseDistanceValue(points, keyName, x, y) {
-  let weighted = 0;
-  let weights = 0;
+function gridCells(type, keyName, points) {
+  const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
+  const cellWidth = (mapGridStepDegrees / (maxLon - minLon)) * 1000 + 1;
+  const cellHeight = (mapGridStepDegrees / (maxLat - minLat)) * 1030 + 1;
+  const cells = [];
 
   points.forEach((point) => {
-    const position = markerPosition(point);
-    const distance = Math.hypot(position.x - x, position.y - y);
     const value = Number(point[keyName].value);
     if (!Number.isFinite(value)) {
       return;
     }
-    if (distance < 0.1) {
-      weighted = value;
-      weights = 1;
-      return;
-    }
-    const weight = 1 / distance ** 2;
-    weighted += value * weight;
-    weights += weight;
+
+    const { x, y } = pointPosition(point);
+    const color =
+      type === "temperature" ? temperatureColor(value) : rainfallColor(value);
+    const opacity = type === "temperature" ? 0.86 : value <= 0 ? 0.5 : 0.86;
+    cells.push(
+      `<rect x="${(x - cellWidth / 2).toFixed(2)}" y="${(y - cellHeight / 2).toFixed(2)}" width="${cellWidth.toFixed(2)}" height="${cellHeight.toFixed(2)}" fill="${color}" opacity="${opacity}"></rect>`,
+    );
   });
-
-  return weights ? weighted / weights : 0;
-}
-
-function gridCells(type, keyName, points) {
-  const cellSize = 24;
-  const cells = [];
-
-  for (let y = 0; y < 1030; y += cellSize) {
-    for (let x = 0; x < 1000; x += cellSize) {
-      const value = inverseDistanceValue(
-        points,
-        keyName,
-        x + cellSize / 2,
-        y + cellSize / 2,
-      );
-      const color =
-        type === "temperature" ? temperatureColor(value) : rainfallColor(value);
-      const opacity = type === "temperature" ? 0.82 : value <= 0 ? 0.42 : 0.82;
-      cells.push(
-        `<rect x="${x}" y="${y}" width="${cellSize + 1}" height="${cellSize + 1}" fill="${color}" opacity="${opacity}"></rect>`,
-      );
-    }
-  }
 
   return cells.join("");
 }
@@ -235,6 +272,13 @@ function buildUrl(model, points, variables) {
 }
 
 function extractValue(data, variable, hoursAhead) {
+  if (!data?.hourly?.time || !data.hourly[variable]) {
+    return {
+      time: null,
+      value: null,
+    };
+  }
+
   const target = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
   const index = nearestIndex(data.hourly.time, target);
   return {
@@ -271,6 +315,20 @@ async function fetchPointForecasts(model, points, variables) {
       p48: extractValue(data, "pressure_msl", 48),
     };
   });
+}
+
+async function fetchForecastBatches(model, points, variables) {
+  const batches = [];
+
+  for (let index = 0; index < points.length; index += requestBatchSize) {
+    batches.push(points.slice(index, index + requestBatchSize));
+  }
+
+  const results = await Promise.all(
+    batches.map((batch) => fetchPointForecasts(model, batch, variables)),
+  );
+
+  return results.flat();
 }
 
 async function fetchBoundary() {
@@ -366,31 +424,6 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
           <text x="740" y="465">East</text>
           <text x="485" y="885">South</text>
         </g>
-        <g clip-path="url(#${clipId})">
-        ${points
-          .map((point) => {
-            const value = Number(point[keyName].value);
-            const color =
-              type === "temperature"
-                ? temperatureColor(value)
-                : rainfallColor(value);
-            const size = markerSize(type, value);
-            const { x, y } = markerPosition(point);
-
-            return `
-              <g class="map-marker ${type}" tabindex="0" aria-label="${point.name}: ${formatNumber(value)} ${unit}">
-                <title>${point.name}: ${formatNumber(value)} ${unit}</title>
-                <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(size / 2).toFixed(2)}" fill="${color}"></circle>
-                ${
-                  type === "temperature"
-                    ? `<text x="${x.toFixed(2)}" y="${(y + 4).toFixed(2)}">${formatNumber(value, 0)}</text>`
-                    : ""
-                }
-              </g>
-            `;
-          })
-          .join("")}
-        </g>
       </svg>
       <footer>
         <span>${formatNumber(range.min)} to ${formatNumber(range.max)} ${unit}</span>
@@ -468,13 +501,15 @@ async function loadForecast() {
   cityDetailGrid.innerHTML = "";
 
   try {
-    const [, points] = await Promise.all([
-      fetchBoundary(),
-      fetchPointForecasts(model, samplePoints, cityVariables),
+    await fetchBoundary();
+    const gridPoints = buildIndiaGrid();
+    const [mapPoints, cityPoints] = await Promise.all([
+      fetchForecastBatches(model, gridPoints, mapVariables),
+      fetchForecastBatches(model, cityLocations, cityVariables),
     ]);
-    currentMapPoints = points;
-    renderMaps(model, points);
-    renderCityDetails(points);
+    currentMapPoints = cityPoints;
+    renderMaps(model, mapPoints);
+    renderCityDetails(cityPoints);
     setStatus(`${model.label} maps loaded.`);
   } catch (error) {
     setStatus(error.message || "Forecast maps unavailable.", true);
