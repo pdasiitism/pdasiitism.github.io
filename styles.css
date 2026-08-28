@@ -994,10 +994,8 @@ h1 {
 }
 
 .india-map-card header {
-  align-items: start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
+  display: grid;
+  gap: 8px;
 }
 
 .india-map-card header span {
@@ -1008,17 +1006,17 @@ h1 {
 }
 
 .india-map-card h2 {
-  font-size: clamp(1.45rem, 3vw, 2.3rem);
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
   line-height: 1;
   margin-bottom: 0;
 }
 
 .india-map-card header p {
   color: var(--ink-muted);
-  flex: 0 0 auto;
+  font-size: 0.94rem;
   font-weight: 850;
   margin: 0;
-  text-align: right;
+  text-align: left;
 }
 
 .india-map {

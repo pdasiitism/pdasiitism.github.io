@@ -49,22 +49,25 @@ const cityVariables = [
 ];
 const mapVariables = ["temperature_2m", "precipitation"];
 const preferredMapGridStepDegrees = 1;
-const requestBatchSize = 900;
+const requestBatchSize = 50;
 const requestConcurrency = 1;
+const requestRetryDelayMs = 2500;
 
 const models = {
   gfs: {
     key: "gfs",
     label: "GFS",
     name: "NOAA GFS",
-    endpoint: "https://api.open-meteo.com/v1/gfs",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "gfs_global",
     dataUrl: "assets/data/forecast-gfs.json",
   },
   ifs: {
     key: "ifs",
     label: "IFS",
     name: "ECMWF IFS",
-    endpoint: "https://api.open-meteo.com/v1/ecmwf",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "ecmwf_ifs025",
     dataUrl: "assets/data/forecast-ifs.json",
   },
 };
@@ -275,17 +278,26 @@ function gridCells(type, keyName, points, gridStepDegrees) {
   return cells.join("");
 }
 
-function requestBody(points, variables) {
-  return {
-    latitude: points.map((point) => point.latitude),
-    longitude: points.map((point) => point.longitude),
-    hourly: variables,
+function buildUrl(model, points, variables) {
+  const params = new URLSearchParams({
+    latitude: points.map((point) => point.latitude).join(","),
+    longitude: points.map((point) => point.longitude).join(","),
+    hourly: variables.join(","),
+    models: model.model,
     timezone: "Asia/Kolkata",
-    forecast_hours: 49,
+    forecast_hours: "49",
     wind_speed_unit: "kmh",
     precipitation_unit: "mm",
     temperature_unit: "celsius",
-  };
+  });
+
+  return `${model.endpoint}?${params.toString()}`;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function extractValue(data, variable, hoursAhead) {
@@ -305,13 +317,12 @@ function extractValue(data, variable, hoursAhead) {
 }
 
 async function fetchPointForecasts(model, points, variables) {
-  const response = await fetch(model.endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody(points, variables)),
-  });
+  let response = await fetch(buildUrl(model, points, variables));
+
+  if (response.status === 429) {
+    await wait(requestRetryDelayMs);
+    response = await fetch(buildUrl(model, points, variables));
+  }
 
   if (!response.ok) {
     const error = new Error(`${model.label} forecast unavailable`);
@@ -408,9 +419,13 @@ function formatLeadTime(points, key) {
 
   return new Date(time).toLocaleString("en-IN", {
     weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Asia/Kolkata",
+    timeZoneName: "short",
   });
 }
 
@@ -438,7 +453,7 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
           <span>${model.label}</span>
           <h2>${title}</h2>
         </div>
-        <p>${formatLeadTime(points, keyName)}</p>
+        <p>Valid: ${formatLeadTime(points, keyName)}</p>
       </header>
       <svg class="india-map" viewBox="0 0 1000 1030" role="img" aria-label="${title} forecast map for India">
         <defs>

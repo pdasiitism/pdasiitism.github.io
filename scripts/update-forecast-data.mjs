@@ -45,12 +45,14 @@ const models = [
   {
     key: "gfs",
     label: "GFS",
-    endpoint: "https://api.open-meteo.com/v1/gfs",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "gfs_global",
   },
   {
     key: "ifs",
     label: "IFS",
-    endpoint: "https://api.open-meteo.com/v1/ecmwf",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "ecmwf_ifs025",
   },
 ];
 
@@ -63,8 +65,9 @@ const cityVariables = [
   "cloud_cover",
   "pressure_msl",
 ];
-const gridStepDegrees = 0.5;
-const requestBatchSize = 900;
+const gridStepDegrees = 1;
+const requestBatchSize = 50;
+const requestRetryDelayMs = 3500;
 const outputDir = new URL("../assets/data/", import.meta.url);
 const boundaryFile = new URL("../assets/maps/india-state-boundary.geojson", import.meta.url);
 
@@ -124,17 +127,26 @@ function buildIndiaGrid(boundary) {
   return points;
 }
 
-function requestBody(points, variables) {
-  return {
-    latitude: points.map((point) => point.latitude),
-    longitude: points.map((point) => point.longitude),
-    hourly: variables,
+function buildUrl(model, points, variables) {
+  const params = new URLSearchParams({
+    latitude: points.map((point) => point.latitude).join(","),
+    longitude: points.map((point) => point.longitude).join(","),
+    hourly: variables.join(","),
+    models: model.model,
     timezone: "Asia/Kolkata",
-    forecast_hours: 49,
+    forecast_hours: "49",
     wind_speed_unit: "kmh",
     precipitation_unit: "mm",
     temperature_unit: "celsius",
-  };
+  });
+
+  return `${model.endpoint}?${params.toString()}`;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function nearestIndex(times, targetDate) {
@@ -169,13 +181,12 @@ function extractValue(data, variable, hoursAhead) {
 }
 
 async function fetchBatch(model, points, variables) {
-  const response = await fetch(model.endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody(points, variables)),
-  });
+  let response = await fetch(buildUrl(model, points, variables));
+
+  if (response.status === 429) {
+    await wait(requestRetryDelayMs);
+    response = await fetch(buildUrl(model, points, variables));
+  }
 
   if (!response.ok) {
     throw new Error(`${model.label} request failed with HTTP ${response.status}`);
@@ -210,16 +221,15 @@ async function fetchBatches(model, points, variables) {
   for (let index = 0; index < points.length; index += requestBatchSize) {
     const batch = points.slice(index, index + requestBatchSize);
     output.push(...(await fetchBatch(model, batch, variables)));
+    await wait(500);
   }
 
   return output;
 }
 
 async function updateModel(model, gridPoints) {
-  const [mapPoints, cityPoints] = await Promise.all([
-    fetchBatches(model, gridPoints, mapVariables),
-    fetchBatches(model, cityLocations, cityVariables),
-  ]);
+  const mapPoints = await fetchBatches(model, gridPoints, mapVariables);
+  const cityPoints = await fetchBatches(model, cityLocations, cityVariables);
   const payload = {
     generated_at: new Date().toISOString(),
     model: model.label,
