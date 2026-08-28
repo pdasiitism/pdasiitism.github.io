@@ -927,6 +927,31 @@ h1 {
   padding: 0 14px;
 }
 
+.city-select-label {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 280px);
+}
+
+.city-select-label span {
+  color: var(--brick);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.city-select-label select {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #203036;
+  font: inherit;
+  font-weight: 850;
+  min-height: 48px;
+  padding: 0 14px;
+}
+
 .forecast-control p {
   color: var(--ink-muted);
   font-size: 0.92rem;
@@ -1001,10 +1026,14 @@ h1 {
 }
 
 .india-map-shape path {
-  fill: rgba(14, 124, 123, 0.1);
-  stroke: rgba(14, 124, 123, 0.5);
-  stroke-width: 1.2;
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: rgba(19, 83, 90, 0.7);
+  stroke-width: 1.35;
   vector-effect: non-scaling-stroke;
+}
+
+.forecast-field rect {
+  shape-rendering: crispEdges;
 }
 
 .map-labels text {
@@ -1075,6 +1104,85 @@ h1 {
   width: 10px;
 }
 
+.city-forecast-section {
+  padding-top: 0;
+}
+
+.city-forecast-header {
+  align-items: end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.city-forecast-header h2 {
+  font-size: clamp(1.8rem, 4vw, 3.2rem);
+  line-height: 1;
+  margin-bottom: 0;
+}
+
+.city-detail-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.city-detail-card {
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.city-detail-card header span {
+  color: var(--brick);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.city-detail-card h3 {
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.city-detail-card header p {
+  color: var(--ink-muted);
+  font-weight: 850;
+  margin: 0;
+}
+
+.city-detail-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.city-detail-card dl div {
+  align-items: baseline;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-top: 10px;
+}
+
+.city-detail-card dt {
+  color: var(--ink-muted);
+  font-weight: 850;
+}
+
+.city-detail-card dd {
+  color: var(--accent-strong);
+  font-size: 1.2rem;
+  font-weight: 950;
+  margin: 0;
+  text-align: right;
+}
+
 @media (max-width: 980px) {
   .hero-grid,
   .forecast-hero-grid,
@@ -1086,10 +1194,12 @@ h1 {
 
   .publication-grid,
   .conference-grid,
-  .forecast-map-grid {
+  .forecast-map-grid,
+  .city-detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .city-forecast-header,
   .panel-header {
     align-items: start;
     flex-direction: column;
@@ -1131,6 +1241,7 @@ h1 {
   .publication-grid,
   .conference-grid,
   .forecast-map-grid,
+  .city-detail-grid,
   .compact-grid,
   .skill-meter,
   .timeline article {

@@ -26,14 +26,27 @@ const samplePoints = [
   { name: "Port Blair", latitude: 11.6234, longitude: 92.7265 },
 ];
 
-const mapBounds = {
-  minLat: 6,
-  maxLat: 36,
-  minLon: 68,
-  maxLon: 94,
-};
+const cityLocations = [
+  "New Delhi",
+  "Mumbai",
+  "Kolkata",
+  "Chennai",
+  "Bengaluru",
+  "Hyderabad",
+  "Guwahati",
+  "Ahmedabad",
+  "Bhubaneswar",
+  "Dhanbad",
+].map((name) => samplePoints.find((point) => point.name === name));
 
-const variables = ["temperature_2m", "precipitation"];
+const cityVariables = [
+  "temperature_2m",
+  "precipitation",
+  "wind_speed_10m",
+  "wind_gusts_10m",
+  "cloud_cover",
+  "pressure_msl",
+];
 
 const models = {
   gfs: {
@@ -51,13 +64,22 @@ const models = {
 };
 
 const modelSelect = document.querySelector("#model-select");
+const citySelect = document.querySelector("#city-select");
 const forecastForm = document.querySelector("#forecast-form");
 const statusEl = document.querySelector("#forecast-status");
 const mapGrid = document.querySelector("#forecast-map-grid");
+const cityDetailGrid = document.querySelector("#city-detail-grid");
 const profileModal = document.querySelector("#profile-modal");
 const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")];
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
 let indiaBoundary = null;
+let currentMapPoints = [];
+
+function populateCities() {
+  citySelect.innerHTML = cityLocations
+    .map((city, index) => `<option value="${index}">${city.name}</option>`)
+    .join("");
+}
 
 function formatNumber(value, digits = 1) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
@@ -69,19 +91,6 @@ function formatNumber(value, digits = 1) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
-}
-
-function pointStyle(point) {
-  const x =
-    ((point.longitude - mapBounds.minLon) /
-      (mapBounds.maxLon - mapBounds.minLon)) *
-    100;
-  const y =
-    ((mapBounds.maxLat - point.latitude) /
-      (mapBounds.maxLat - mapBounds.minLat)) *
-    100;
-
-  return `left:${clamp(x, 0, 100)}%;top:${clamp(y, 0, 100)}%;`;
 }
 
 function projectPoint(coordinate) {
@@ -134,38 +143,90 @@ function nearestIndex(times, targetDate) {
 }
 
 function temperatureColor(value) {
-  if (value < 10) return "#355caa";
-  if (value < 18) return "#2f8ac4";
-  if (value < 26) return "#19a974";
-  if (value < 34) return "#e0a526";
-  if (value < 40) return "#d66b2f";
-  return "#b83232";
+  if (value < 0) return "#7e57c2";
+  if (value < 8) return "#3f51b5";
+  if (value < 16) return "#2196f3";
+  if (value < 24) return "#26a69a";
+  if (value < 32) return "#fdd835";
+  if (value < 38) return "#fb8c00";
+  if (value < 44) return "#e53935";
+  return "#8e0000";
 }
 
 function rainfallColor(value) {
-  if (value <= 0) return "#d9e1dd";
-  if (value < 1) return "#b7e4d6";
-  if (value < 5) return "#65c3b4";
-  if (value < 15) return "#1f8fbe";
-  if (value < 30) return "#3763ad";
-  return "#5c2f99";
+  if (value <= 0) return "#f7fbff";
+  if (value < 1) return "#c7e9b4";
+  if (value < 5) return "#41b6c4";
+  if (value < 15) return "#2c7fb8";
+  if (value < 30) return "#fdae61";
+  if (value < 60) return "#d7191c";
+  return "#6a1b9a";
 }
 
 function markerSize(type, value) {
   if (type === "temperature") {
-    return 18;
+    return 15;
   }
 
-  return clamp(12 + Math.sqrt(Math.max(value, 0)) * 5, 12, 34);
+  return clamp(10 + Math.sqrt(Math.max(value, 0)) * 5, 10, 30);
 }
 
-function buildUrl(model) {
+function inverseDistanceValue(points, keyName, x, y) {
+  let weighted = 0;
+  let weights = 0;
+
+  points.forEach((point) => {
+    const position = markerPosition(point);
+    const distance = Math.hypot(position.x - x, position.y - y);
+    const value = Number(point[keyName].value);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    if (distance < 0.1) {
+      weighted = value;
+      weights = 1;
+      return;
+    }
+    const weight = 1 / distance ** 2;
+    weighted += value * weight;
+    weights += weight;
+  });
+
+  return weights ? weighted / weights : 0;
+}
+
+function gridCells(type, keyName, points) {
+  const cellSize = 24;
+  const cells = [];
+
+  for (let y = 0; y < 1030; y += cellSize) {
+    for (let x = 0; x < 1000; x += cellSize) {
+      const value = inverseDistanceValue(
+        points,
+        keyName,
+        x + cellSize / 2,
+        y + cellSize / 2,
+      );
+      const color =
+        type === "temperature" ? temperatureColor(value) : rainfallColor(value);
+      const opacity = type === "temperature" ? 0.82 : value <= 0 ? 0.42 : 0.82;
+      cells.push(
+        `<rect x="${x}" y="${y}" width="${cellSize + 1}" height="${cellSize + 1}" fill="${color}" opacity="${opacity}"></rect>`,
+      );
+    }
+  }
+
+  return cells.join("");
+}
+
+function buildUrl(model, points, variables) {
   const params = new URLSearchParams({
-    latitude: samplePoints.map((point) => point.latitude).join(","),
-    longitude: samplePoints.map((point) => point.longitude).join(","),
+    latitude: points.map((point) => point.latitude).join(","),
+    longitude: points.map((point) => point.longitude).join(","),
     hourly: variables.join(","),
     timezone: "Asia/Kolkata",
     forecast_hours: "49",
+    wind_speed_unit: "kmh",
     precipitation_unit: "mm",
     temperature_unit: "celsius",
   });
@@ -182,8 +243,8 @@ function extractValue(data, variable, hoursAhead) {
   };
 }
 
-async function fetchForecast(model) {
-  const response = await fetch(buildUrl(model));
+async function fetchPointForecasts(model, points, variables) {
+  const response = await fetch(buildUrl(model, points, variables));
 
   if (!response.ok) {
     throw new Error(`${model.label} forecast unavailable`);
@@ -192,7 +253,7 @@ async function fetchForecast(model) {
   const payload = await response.json();
   const locations = Array.isArray(payload) ? payload : [payload];
 
-  return samplePoints.map((point, index) => {
+  return points.map((point, index) => {
     const data = locations[index];
     return {
       ...point,
@@ -200,6 +261,14 @@ async function fetchForecast(model) {
       t48: extractValue(data, "temperature_2m", 48),
       r24: extractValue(data, "precipitation", 24),
       r48: extractValue(data, "precipitation", 48),
+      w24: extractValue(data, "wind_speed_10m", 24),
+      w48: extractValue(data, "wind_speed_10m", 48),
+      g24: extractValue(data, "wind_gusts_10m", 24),
+      g48: extractValue(data, "wind_gusts_10m", 48),
+      c24: extractValue(data, "cloud_cover", 24),
+      c48: extractValue(data, "cloud_cover", 48),
+      p24: extractValue(data, "pressure_msl", 24),
+      p48: extractValue(data, "pressure_msl", 48),
     };
   });
 }
@@ -248,26 +317,27 @@ function renderLegend(type) {
   if (type === "temperature") {
     return `
       <div class="forecast-legend">
-        <span><i style="background:#355caa"></i>Cool</span>
-        <span><i style="background:#19a974"></i>Mild</span>
-        <span><i style="background:#e0a526"></i>Warm</span>
-        <span><i style="background:#b83232"></i>Hot</span>
+        <span><i style="background:#3f51b5"></i>Cold</span>
+        <span><i style="background:#26a69a"></i>Mild</span>
+        <span><i style="background:#fdd835"></i>Warm</span>
+        <span><i style="background:#e53935"></i>Hot</span>
       </div>
     `;
   }
 
   return `
     <div class="forecast-legend">
-      <span><i style="background:#d9e1dd"></i>Dry</span>
-      <span><i style="background:#65c3b4"></i>Light</span>
-      <span><i style="background:#1f8fbe"></i>Moderate</span>
-      <span><i style="background:#5c2f99"></i>Heavy</span>
+      <span><i style="background:#f7fbff"></i>Dry</span>
+      <span><i style="background:#41b6c4"></i>Light</span>
+      <span><i style="background:#2c7fb8"></i>Moderate</span>
+      <span><i style="background:#d7191c"></i>Heavy</span>
     </div>
   `;
 }
 
 function renderMapCard({ title, type, keyName, unit, model, points }) {
   const range = valueRange(points, keyName);
+  const clipId = `india-clip-${type}-${keyName}`;
 
   return `
     <article class="india-map-card">
@@ -280,10 +350,13 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
       </header>
       <svg class="india-map" viewBox="0 0 1000 1030" role="img" aria-label="${title} forecast map for India">
         <defs>
-          <clipPath id="india-clip-${type}-${keyName}">
+          <clipPath id="${clipId}">
             ${boundaryPaths()}
           </clipPath>
         </defs>
+        <g class="forecast-field" clip-path="url(#${clipId})">
+          ${gridCells(type, keyName, points)}
+        </g>
         <g class="india-map-shape">
           ${boundaryPaths()}
         </g>
@@ -293,7 +366,7 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
           <text x="740" y="465">East</text>
           <text x="485" y="885">South</text>
         </g>
-        <g clip-path="url(#india-clip-${type}-${keyName})">
+        <g clip-path="url(#${clipId})">
         ${points
           .map((point) => {
             const value = Number(point[keyName].value);
@@ -329,32 +402,45 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
 
 function renderMaps(model, points) {
   mapGrid.innerHTML = [
-    {
-      title: "Temperature - 24h",
-      type: "temperature",
-      keyName: "t24",
-      unit: "C",
-    },
-    {
-      title: "Rainfall - 24h",
-      type: "rainfall",
-      keyName: "r24",
-      unit: "mm",
-    },
-    {
-      title: "Temperature - 48h",
-      type: "temperature",
-      keyName: "t48",
-      unit: "C",
-    },
-    {
-      title: "Rainfall - 48h",
-      type: "rainfall",
-      keyName: "r48",
-      unit: "mm",
-    },
+    { title: "Temperature - 24h", type: "temperature", keyName: "t24", unit: "C" },
+    { title: "Rainfall - 24h", type: "rainfall", keyName: "r24", unit: "mm" },
+    { title: "Temperature - 48h", type: "temperature", keyName: "t48", unit: "C" },
+    { title: "Rainfall - 48h", type: "rainfall", keyName: "r48", unit: "mm" },
   ]
     .map((config) => renderMapCard({ ...config, model, points }))
+    .join("");
+}
+
+function renderCityDetails(points) {
+  const selectedCity = cityLocations[Number(citySelect.value) || 0];
+  const point = points.find((item) => item.name === selectedCity.name);
+  if (!point) {
+    cityDetailGrid.innerHTML = "";
+    return;
+  }
+
+  cityDetailGrid.innerHTML = [24, 48]
+    .map((lead) => {
+      const suffix = lead === 24 ? "24" : "48";
+      const time = formatLeadTime([point], `t${suffix}`);
+      return `
+        <article class="city-detail-card">
+          <header>
+            <span>${lead} hours ahead</span>
+            <h3>${point.name}</h3>
+            <p>${time}</p>
+          </header>
+          <dl>
+            <div><dt>Temperature</dt><dd>${formatNumber(point[`t${suffix}`].value)} C</dd></div>
+            <div><dt>Rainfall</dt><dd>${formatNumber(point[`r${suffix}`].value)} mm</dd></div>
+            <div><dt>Wind speed</dt><dd>${formatNumber(point[`w${suffix}`].value)} km/h</dd></div>
+            <div><dt>Wind gust</dt><dd>${formatNumber(point[`g${suffix}`].value)} km/h</dd></div>
+            <div><dt>Cloud cover</dt><dd>${formatNumber(point[`c${suffix}`].value, 0)}%</dd></div>
+            <div><dt>MSL pressure</dt><dd>${formatNumber(point[`p${suffix}`].value)} hPa</dd></div>
+          </dl>
+        </article>
+      `;
+    })
     .join("");
 }
 
@@ -379,10 +465,16 @@ async function loadForecast() {
   const model = models[modelSelect.value] || models.gfs;
   setStatus(`Loading ${model.label} maps...`);
   mapGrid.innerHTML = "";
+  cityDetailGrid.innerHTML = "";
 
   try {
-    const [, points] = await Promise.all([fetchBoundary(), fetchForecast(model)]);
+    const [, points] = await Promise.all([
+      fetchBoundary(),
+      fetchPointForecasts(model, samplePoints, cityVariables),
+    ]);
+    currentMapPoints = points;
     renderMaps(model, points);
+    renderCityDetails(points);
     setStatus(`${model.label} maps loaded.`);
   } catch (error) {
     setStatus(error.message || "Forecast maps unavailable.", true);
@@ -395,6 +487,10 @@ forecastForm.addEventListener("submit", (event) => {
 });
 
 modelSelect.addEventListener("change", loadForecast);
+
+citySelect.addEventListener("change", () => {
+  renderCityDetails(currentMapPoints);
+});
 
 profileOpenButtons.forEach((button) => {
   button.addEventListener("click", openProfiles);
@@ -410,4 +506,5 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+populateCities();
 loadForecast();

@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>India Forecast Lab | Prabal Das</title>
+    <title>India Forecast | Prabal Das</title>
     <meta
       name="description"
       content="India forecast maps for rainfall and temperature at 24-hour and 48-hour lead times."
     />
-    <meta property="og:title" content="India Forecast Lab | Prabal Das" />
+    <meta property="og:title" content="India Forecast | Prabal Das" />
     <meta
       property="og:description"
       content="Compare India rainfall and temperature maps at 24-hour and 48-hour lead times."
@@ -16,14 +16,14 @@
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/Nikon-2554.jpg?v=1" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="India Forecast Lab | Prabal Das" />
+    <meta name="twitter:title" content="India Forecast | Prabal Das" />
     <meta
       name="twitter:description"
       content="Compare India rainfall and temperature maps at 24-hour and 48-hour lead times."
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=8" />
+    <link rel="stylesheet" href="styles.css?v=9" />
   </head>
   <body>
     <main class="forecast-page">
@@ -31,7 +31,7 @@
         <nav class="topbar forecast-topbar" aria-label="Forecast navigation">
           <a href="index.html#about">About</a>
           <a href="index.html#cv">Publications</a>
-          <a href="forecast.html" aria-current="page">Forecast Lab</a>
+          <a href="forecast.html" aria-current="page">Forecast</a>
           <a href="index.html#contact">Contact</a>
           <button type="button" data-open-profiles>Profiles</button>
           <a href="index.html">Home</a>
@@ -39,7 +39,7 @@
 
         <div class="forecast-hero-grid">
           <div>
-            <p class="eyebrow">India Forecast Lab</p>
+            <p class="eyebrow">India Forecast</p>
             <h1 id="forecast-title">Forecast Maps</h1>
             <p class="forecast-kicker">Rainfall and temperature at 24h and 48h</p>
           </div>
@@ -57,6 +57,20 @@
 
       <section class="forecast-board" aria-label="India forecast maps">
         <div class="forecast-map-grid" id="forecast-map-grid"></div>
+      </section>
+
+      <section class="forecast-board city-forecast-section" aria-labelledby="city-forecast-title">
+        <div class="city-forecast-header">
+          <div>
+            <p class="eyebrow">City Forecast</p>
+            <h2 id="city-forecast-title">Detailed variables</h2>
+          </div>
+          <label class="city-select-label" for="city-select">
+            <span>City</span>
+            <select id="city-select" name="city"></select>
+          </label>
+        </div>
+        <div class="city-detail-grid" id="city-detail-grid"></div>
       </section>
     </main>
     <div class="profile-modal" id="profile-modal" aria-hidden="true">
@@ -81,6 +95,6 @@
         </div>
       </section>
     </div>
-    <script src="forecast.js?v=4"></script>
+    <script src="forecast.js?v=5"></script>
   </body>
 </html>
