@@ -886,16 +886,25 @@ h1 {
 }
 
 .forecast-hero h1 {
-  font-size: clamp(3.3rem, 8vw, 6.8rem);
-  margin-bottom: 12px;
+  font-size: clamp(2.7rem, 5.8vw, 5rem);
+  margin-bottom: 10px;
 }
 
 .forecast-kicker {
   color: #344047;
-  font-size: clamp(1.08rem, 1.8vw, 1.45rem);
+  font-size: clamp(1rem, 1.35vw, 1.2rem);
   font-weight: 850;
   line-height: 1.35;
   margin: 0;
+}
+
+.forecast-note {
+  color: var(--ink-muted);
+  font-size: clamp(0.92rem, 1.2vw, 1.02rem);
+  font-weight: 750;
+  line-height: 1.45;
+  margin: 14px 0 0;
+  max-width: 760px;
 }
 
 .forecast-control {

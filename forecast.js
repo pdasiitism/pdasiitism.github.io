@@ -48,8 +48,7 @@ const cityVariables = [
   "pressure_msl",
 ];
 const mapVariables = ["temperature_2m", "precipitation"];
-const preferredMapGridStepDegrees = 0.5;
-const fallbackMapGridStepDegrees = 1;
+const preferredMapGridStepDegrees = 1;
 const requestBatchSize = 900;
 const requestConcurrency = 1;
 
@@ -480,22 +479,10 @@ function renderMaps(model, points) {
 }
 
 async function fetchMapForecasts(model) {
-  try {
-    const gridPoints = buildIndiaGrid(preferredMapGridStepDegrees);
-    const points = await fetchForecastBatches(model, gridPoints, mapVariables);
-    points.gridStepDegrees = preferredMapGridStepDegrees;
-    return points;
-  } catch (error) {
-    if (error.status !== 429) {
-      throw error;
-    }
-
-    const gridPoints = buildIndiaGrid(fallbackMapGridStepDegrees);
-    const points = await fetchForecastBatches(model, gridPoints, mapVariables);
-    points.gridStepDegrees = fallbackMapGridStepDegrees;
-    points.usedFallbackGrid = true;
-    return points;
-  }
+  const gridPoints = buildIndiaGrid(preferredMapGridStepDegrees);
+  const points = await fetchForecastBatches(model, gridPoints, mapVariables);
+  points.gridStepDegrees = preferredMapGridStepDegrees;
+  return points;
 }
 
 async function fetchCachedForecast(model) {
@@ -592,9 +579,7 @@ async function loadForecast() {
       renderCityDetails(cityPoints);
     }
     setStatus(
-      mapPoints.usedFallbackGrid
-        ? `${model.label} maps loaded at 1.0 degree grid.`
-        : `${model.label}${sourceLabel} maps loaded at ${mapPoints.gridStepDegrees} degree grid.`,
+      `${model.label}${sourceLabel} maps loaded at ${mapPoints.gridStepDegrees} degree grid.`,
     );
   } catch (error) {
     setStatus(error.message || "Forecast maps unavailable.", true);
