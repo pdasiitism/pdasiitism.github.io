@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>India Forecast Lab | Prabal Das</title>
+    <meta
+      name="description"
+      content="A compact India forecast comparison page using Open-Meteo's GFS and ECMWF IFS APIs for 24-hour and 48-hour outlooks."
+    />
+    <meta property="og:title" content="India Forecast Lab | Prabal Das" />
+    <meta
+      property="og:description"
+      content="Compare GFS and ECMWF IFS 24-hour and 48-hour forecast snapshots for major Indian locations."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/Nikon-2554.jpg?v=1" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="India Forecast Lab | Prabal Das" />
+    <meta
+      name="twitter:description"
+      content="Compare GFS and ECMWF IFS 24-hour and 48-hour forecast snapshots for major Indian locations."
+    />
+    <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=6" />
+  </head>
+  <body>
+    <main class="forecast-page">
+      <section class="forecast-hero" aria-labelledby="forecast-title">
+        <nav class="topbar forecast-topbar" aria-label="Forecast navigation">
+          <a href="index.html#about">About</a>
+          <a href="index.html#cv">Publications</a>
+          <a href="forecast.html" aria-current="page">Forecast Lab</a>
+          <a href="index.html#contact">Contact</a>
+          <button type="button" data-open-profiles>Profiles</button>
+          <a href="index.html">Home</a>
+        </nav>
+
+        <div class="forecast-hero-grid">
+          <div>
+            <p class="eyebrow">India Forecast Lab</p>
+            <h1 id="forecast-title">GFS vs IFS</h1>
+            <p class="hero-summary">
+              A compact 24-hour and 48-hour forecast comparison for India using
+              Open-Meteo's NOAA GFS and ECMWF IFS endpoints. Select a location
+              to compare temperature, rainfall, wind, cloud cover, and pressure
+              snapshots from both models.
+            </p>
+          </div>
+          <form class="forecast-control" id="forecast-form">
+            <label for="location-select">Location</label>
+            <select id="location-select" name="location"></select>
+            <button class="primary-action" type="submit">Refresh Forecast</button>
+            <p id="forecast-status" role="status">Loading forecast...</p>
+          </form>
+        </div>
+      </section>
+
+      <section class="forecast-board" aria-label="Model comparison">
+        <div class="forecast-summary" id="forecast-summary"></div>
+        <div class="model-grid" id="model-grid"></div>
+      </section>
+    </main>
+    <div class="profile-modal" id="profile-modal" aria-hidden="true">
+      <div class="profile-modal-backdrop" data-close-profiles></div>
+      <section
+        class="profile-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-modal-title"
+      >
+        <button class="profile-modal-close" type="button" aria-label="Close profiles" data-close-profiles>
+          &times;
+        </button>
+        <p class="eyebrow">Profiles</p>
+        <h2 id="profile-modal-title">Academic and professional links</h2>
+        <div class="profile-link-grid" aria-label="Research profile links">
+          <a href="https://orcid.org/0000-0003-3009-942X" rel="noreferrer" target="_blank">ORCID</a>
+          <a href="https://scholar.google.com/citations?user=tzNdVMMAAAAJ&amp;hl=en" rel="noreferrer" target="_blank">Google Scholar</a>
+          <a href="https://www.researchgate.net/profile/Prabal-Das?ev=hdr_xprf" rel="noreferrer" target="_blank">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/prabal-das-453b61125/" rel="noreferrer" target="_blank">LinkedIn</a>
+          <a href="https://github.com/pdasiitism" rel="noreferrer" target="_blank">GitHub</a>
+        </div>
+      </section>
+    </div>
+    <script src="forecast.js?v=2"></script>
+  </body>
+</html>
