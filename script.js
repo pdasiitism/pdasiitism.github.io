@@ -85,7 +85,6 @@ const publications = [
     venue: "International Journal of Water Resources Engineering, 3(2), 70-80",
     area: "Drought",
     link: "",
-    label: "No DOI listed in CV",
   },
 ];
 
@@ -150,7 +149,6 @@ const presentations = [
     year: "2025",
     venue: "HYDRO 2025, NIT Rourkela, India, 18-20 Dec 2025",
     link: "",
-    label: "No public link listed in CV",
   },
   {
     title:
@@ -159,7 +157,6 @@ const presentations = [
     year: "2025",
     venue: "HYDRO 2025, 30th International Conference",
     link: "",
-    label: "No public link listed in CV",
   },
   {
     title: "Machine Learning Based Improvement of Precipitation Type Forecasts",
@@ -220,7 +217,6 @@ const presentations = [
     venue:
       "International Conference on Global Civil Engineering Challenges in Sustainable Development and Climate Change (ICGCSC 2017), pp. 277-282, Mangalore Institute of Technology and Engineering",
     link: "",
-    label: "No public link listed in CV",
   },
 ];
 
@@ -246,11 +242,15 @@ const portraitDots = [...document.querySelectorAll("[data-photo-dot]")];
 const portraitNavButtons = [...document.querySelectorAll("[data-photo-nav]")];
 const tabButtons = [...document.querySelectorAll("[data-tab]")];
 const tabPanels = [...document.querySelectorAll(".tab-panel")];
+const tabJumpLinks = [...document.querySelectorAll("[data-jump-tab]")];
+const profileModal = document.querySelector("#profile-modal");
+const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")];
+const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
 let activePhoto = 0;
 
 function itemAction(item) {
   if (!item.link) {
-    return `<span class="publication-link muted-link">${item.label}</span>`;
+    return "";
   }
 
   return `<a class="publication-link" href="${item.link}" rel="noreferrer" target="_blank">${item.label}</a>`;
@@ -391,6 +391,26 @@ function activateTab(tabName) {
   });
 }
 
+function openProfiles() {
+  if (!profileModal) {
+    return;
+  }
+
+  profileModal.classList.add("active");
+  profileModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closeProfiles() {
+  if (!profileModal) {
+    return;
+  }
+
+  profileModal.classList.remove("active");
+  profileModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     filterButtons.forEach((item) => item.classList.remove("active"));
@@ -415,6 +435,26 @@ tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     activateTab(button.dataset.tab);
   });
+});
+
+tabJumpLinks.forEach((link) => {
+  link.addEventListener("click", () => {
+    activateTab(link.dataset.jumpTab);
+  });
+});
+
+profileOpenButtons.forEach((button) => {
+  button.addEventListener("click", openProfiles);
+});
+
+profileCloseButtons.forEach((button) => {
+  button.addEventListener("click", closeProfiles);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeProfiles();
+  }
 });
 
 renderPublications();

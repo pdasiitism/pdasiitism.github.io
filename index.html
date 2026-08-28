@@ -23,16 +23,17 @@
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <main class="profile-site">
       <section class="hero-section" aria-labelledby="profile-title">
         <nav class="topbar" aria-label="Profile navigation">
           <a href="#about">About</a>
+          <a href="#cv" data-jump-tab="journals">Publications</a>
           <a href="#cv">CV</a>
           <a href="#contact">Contact</a>
-          <a href="https://github.com/pdasiitism" rel="noreferrer" target="_blank">GitHub</a>
+          <button type="button" data-open-profiles>Profiles</button>
         </nav>
 
         <div class="hero-grid" id="about">
@@ -125,7 +126,7 @@
         </div>
 
         <div class="tab-list" role="tablist" aria-label="CV sections">
-          <button class="active" id="tab-publications" type="button" role="tab" aria-selected="true" aria-controls="panel-publications" data-tab="publications">Publications</button>
+          <button class="active" id="tab-journals" type="button" role="tab" aria-selected="true" aria-controls="panel-journals" data-tab="journals">Journals</button>
           <button id="tab-books" type="button" role="tab" aria-selected="false" aria-controls="panel-books" data-tab="books">Book Chapters</button>
           <button id="tab-presentations" type="button" role="tab" aria-selected="false" aria-controls="panel-presentations" data-tab="presentations">Conferences</button>
           <button id="tab-experience" type="button" role="tab" aria-selected="false" aria-controls="panel-experience" data-tab="experience">Experience</button>
@@ -134,7 +135,7 @@
           <button id="tab-awards" type="button" role="tab" aria-selected="false" aria-controls="panel-awards" data-tab="awards">Awards</button>
         </div>
 
-        <section class="tab-panel active" id="panel-publications" role="tabpanel" aria-labelledby="tab-publications">
+        <section class="tab-panel active" id="panel-journals" role="tabpanel" aria-labelledby="tab-journals">
           <div class="panel-header">
             <div>
               <p class="eyebrow">Peer-Reviewed Journals</p>
@@ -300,18 +301,33 @@
         <div class="contact-links">
           <div class="contact-actions" aria-label="Contact links">
             <a class="primary-action" href="mailto:prabal@uchicagotrust.org">prabal@uchicagotrust.org</a>
-            <a class="secondary-action" href="tel:+919609913479">+91 9609913479</a>
-          </div>
-          <div class="profile-link-grid" aria-label="Research profile links">
-            <a href="https://orcid.org/0000-0003-3009-942X" rel="noreferrer" target="_blank">ORCID</a>
-            <a href="https://scholar.google.com/citations?user=tzNdVMMAAAAJ&amp;hl=en" rel="noreferrer" target="_blank">Google Scholar</a>
-            <a href="https://www.researchgate.net/profile/Prabal-Das?ev=hdr_xprf" rel="noreferrer" target="_blank">ResearchGate</a>
-            <a href="https://www.linkedin.com/in/prabal-das-453b61125/" rel="noreferrer" target="_blank">LinkedIn</a>
-            <a href="https://github.com/pdasiitism" rel="noreferrer" target="_blank">GitHub</a>
+            <a class="secondary-action" href="mailto:prabal.nitk@gmail.com">prabal.nitk@gmail.com</a>
           </div>
         </div>
       </section>
     </main>
-    <script src="script.js?v=2"></script>
+    <div class="profile-modal" id="profile-modal" aria-hidden="true">
+      <div class="profile-modal-backdrop" data-close-profiles></div>
+      <section
+        class="profile-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-modal-title"
+      >
+        <button class="profile-modal-close" type="button" aria-label="Close profiles" data-close-profiles>
+          &times;
+        </button>
+        <p class="eyebrow">Profiles</p>
+        <h2 id="profile-modal-title">Academic and professional links</h2>
+        <div class="profile-link-grid" aria-label="Research profile links">
+          <a href="https://orcid.org/0000-0003-3009-942X" rel="noreferrer" target="_blank">ORCID</a>
+          <a href="https://scholar.google.com/citations?user=tzNdVMMAAAAJ&amp;hl=en" rel="noreferrer" target="_blank">Google Scholar</a>
+          <a href="https://www.researchgate.net/profile/Prabal-Das?ev=hdr_xprf" rel="noreferrer" target="_blank">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/prabal-das-453b61125/" rel="noreferrer" target="_blank">LinkedIn</a>
+          <a href="https://github.com/pdasiitism" rel="noreferrer" target="_blank">GitHub</a>
+        </div>
+      </section>
+    </div>
+    <script src="script.js?v=3"></script>
   </body>
 </html>
