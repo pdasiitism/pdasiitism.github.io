@@ -57,6 +57,7 @@ const mapGrid = document.querySelector("#forecast-map-grid");
 const profileModal = document.querySelector("#profile-modal");
 const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")];
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
+let indiaBoundary = null;
 
 function formatNumber(value, digits = 1) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
@@ -81,6 +82,40 @@ function pointStyle(point) {
     100;
 
   return `left:${clamp(x, 0, 100)}%;top:${clamp(y, 0, 100)}%;`;
+}
+
+function projectPoint(coordinate) {
+  const [longitude, latitude] = coordinate;
+  const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
+  const x = ((longitude - minLon) / (maxLon - minLon)) * 1000;
+  const y = ((maxLat - latitude) / (maxLat - minLat)) * 1030;
+
+  return [clamp(x, 0, 1000), clamp(y, 0, 1030)];
+}
+
+function ringPath(ring) {
+  return ring
+    .map((coordinate, index) => {
+      const [x, y] = projectPoint(coordinate);
+      return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ")
+    .concat(" Z");
+}
+
+function boundaryPaths() {
+  return indiaBoundary.features
+    .map((feature) =>
+      feature.geometry.coordinates
+        .map((ring) => `<path d="${ringPath(ring)}"></path>`)
+        .join(""),
+    )
+    .join("");
+}
+
+function markerPosition(point) {
+  const [x, y] = projectPoint([point.longitude, point.latitude]);
+  return { x, y };
 }
 
 function nearestIndex(times, targetDate) {
@@ -169,6 +204,20 @@ async function fetchForecast(model) {
   });
 }
 
+async function fetchBoundary() {
+  if (indiaBoundary) {
+    return indiaBoundary;
+  }
+
+  const response = await fetch("assets/maps/india-state-boundary.geojson?v=1");
+  if (!response.ok) {
+    throw new Error("India map boundary unavailable");
+  }
+
+  indiaBoundary = await response.json();
+  return indiaBoundary;
+}
+
 function valueRange(points, key) {
   const values = points
     .map((point) => point[key].value)
@@ -229,11 +278,22 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
         </div>
         <p>${formatLeadTime(points, keyName)}</p>
       </header>
-      <div class="india-map" role="img" aria-label="${title} forecast map for India">
-        <span class="map-region north">North</span>
-        <span class="map-region west">West</span>
-        <span class="map-region east">East</span>
-        <span class="map-region south">South</span>
+      <svg class="india-map" viewBox="0 0 1000 1030" role="img" aria-label="${title} forecast map for India">
+        <defs>
+          <clipPath id="india-clip-${type}-${keyName}">
+            ${boundaryPaths()}
+          </clipPath>
+        </defs>
+        <g class="india-map-shape">
+          ${boundaryPaths()}
+        </g>
+        <g class="map-labels" aria-hidden="true">
+          <text x="455" y="150">North</text>
+          <text x="135" y="485">West</text>
+          <text x="740" y="465">East</text>
+          <text x="485" y="885">South</text>
+        </g>
+        <g clip-path="url(#india-clip-${type}-${keyName})">
         ${points
           .map((point) => {
             const value = Number(point[keyName].value);
@@ -242,21 +302,23 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
                 ? temperatureColor(value)
                 : rainfallColor(value);
             const size = markerSize(type, value);
+            const { x, y } = markerPosition(point);
 
             return `
-              <button
-                class="map-marker ${type}"
-                style="${pointStyle(point)}--marker-color:${color};--marker-size:${size}px;"
-                type="button"
-                title="${point.name}: ${formatNumber(value)} ${unit}"
-                aria-label="${point.name}: ${formatNumber(value)} ${unit}"
-              >
-                <span>${type === "temperature" ? formatNumber(value, 0) : formatNumber(value)}</span>
-              </button>
+              <g class="map-marker ${type}" tabindex="0" aria-label="${point.name}: ${formatNumber(value)} ${unit}">
+                <title>${point.name}: ${formatNumber(value)} ${unit}</title>
+                <circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(size / 2).toFixed(2)}" fill="${color}"></circle>
+                ${
+                  type === "temperature"
+                    ? `<text x="${x.toFixed(2)}" y="${(y + 4).toFixed(2)}">${formatNumber(value, 0)}</text>`
+                    : ""
+                }
+              </g>
             `;
           })
           .join("")}
-      </div>
+        </g>
+      </svg>
       <footer>
         <span>${formatNumber(range.min)} to ${formatNumber(range.max)} ${unit}</span>
         ${renderLegend(type)}
@@ -319,7 +381,7 @@ async function loadForecast() {
   mapGrid.innerHTML = "";
 
   try {
-    const points = await fetchForecast(model);
+    const [, points] = await Promise.all([fetchBoundary(), fetchForecast(model)]);
     renderMaps(model, points);
     setStatus(`${model.label} maps loaded.`);
   } catch (error) {

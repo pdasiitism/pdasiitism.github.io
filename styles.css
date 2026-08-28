@@ -995,86 +995,48 @@ h1 {
   background-size: 20% 20%, 20% 20%, auto;
   border: 1px solid var(--line);
   border-radius: 8px;
+  display: block;
   min-height: 390px;
-  overflow: hidden;
-  position: relative;
+  width: 100%;
 }
 
-.india-map::before {
-  background:
-    radial-gradient(ellipse at 56% 18%, rgba(14, 124, 123, 0.12), transparent 0 18%),
-    radial-gradient(ellipse at 50% 46%, rgba(14, 124, 123, 0.12), transparent 0 24%),
-    radial-gradient(ellipse at 44% 72%, rgba(14, 124, 123, 0.12), transparent 0 18%);
-  content: "";
-  inset: 0;
-  position: absolute;
+.india-map-shape path {
+  fill: rgba(14, 124, 123, 0.1);
+  stroke: rgba(14, 124, 123, 0.5);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
 }
 
-.map-region {
+.map-labels text {
   color: rgba(32, 48, 54, 0.34);
+  fill: rgba(32, 48, 54, 0.34);
   font-size: 0.78rem;
   font-weight: 950;
-  position: absolute;
   text-transform: uppercase;
 }
 
-.map-region.north {
-  left: 42%;
-  top: 7%;
-}
-
-.map-region.west {
-  left: 9%;
-  top: 44%;
-}
-
-.map-region.east {
-  right: 10%;
-  top: 38%;
-}
-
-.map-region.south {
-  bottom: 8%;
-  left: 43%;
-}
-
 .map-marker {
-  align-items: center;
-  background: var(--marker-color);
-  border: 2px solid rgba(255, 255, 255, 0.94);
-  border-radius: 999px;
-  box-shadow: 0 8px 22px rgba(23, 27, 31, 0.2);
-  color: #fff;
   cursor: help;
-  display: flex;
-  font: inherit;
-  font-size: 0.72rem;
+}
+
+.map-marker circle {
+  stroke: rgba(255, 255, 255, 0.95);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.map-marker text {
+  fill: #fff;
+  font-size: 20px;
   font-weight: 950;
-  height: var(--marker-size);
-  justify-content: center;
-  line-height: 1;
-  min-height: 12px;
-  min-width: 12px;
-  padding: 0;
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: var(--marker-size);
-  z-index: 2;
-}
-
-.map-marker.rainfall {
-  color: #1d252b;
-}
-
-.map-marker.rainfall span {
-  display: none;
+  pointer-events: none;
+  text-anchor: middle;
 }
 
 .map-marker:focus-visible,
 .map-marker:hover {
   outline: 3px solid rgba(23, 27, 31, 0.26);
   outline-offset: 2px;
-  z-index: 3;
 }
 
 .india-map-card footer {
