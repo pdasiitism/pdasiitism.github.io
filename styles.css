@@ -1057,27 +1057,30 @@ h1 {
   font-weight: 950;
 }
 
-.forecast-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
+.forecast-colorbar {
+  display: grid;
+  flex: 1 1 250px;
+  gap: 7px;
+  max-width: 330px;
 }
 
-.forecast-legend span {
-  align-items: center;
-  color: var(--ink-muted);
-  display: inline-flex;
-  font-size: 0.8rem;
-  font-weight: 850;
-  gap: 5px;
-}
-
-.forecast-legend i {
+.forecast-colorbar i {
+  border: 1px solid rgba(32, 48, 54, 0.18);
   border-radius: 999px;
-  display: inline-block;
-  height: 10px;
-  width: 10px;
+  display: block;
+  height: 13px;
+  width: 100%;
+}
+
+.forecast-colorbar div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.forecast-colorbar span {
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
 }
 
 .city-forecast-section {
@@ -1239,7 +1242,7 @@ h1 {
   }
 
   .india-map-card header p,
-  .forecast-legend {
+  .forecast-colorbar {
     justify-content: flex-start;
     text-align: left;
   }

@@ -48,9 +48,9 @@ const cityVariables = [
   "pressure_msl",
 ];
 const mapVariables = ["temperature_2m", "precipitation"];
-const mapGridStepDegrees = 1;
-const requestBatchSize = 60;
-const requestConcurrency = 2;
+const mapGridStepDegrees = 0.5;
+const requestBatchSize = 900;
+const requestConcurrency = 1;
 
 const models = {
   gfs: {
@@ -233,6 +233,22 @@ function rainfallColor(value) {
   return "#6a1b9a";
 }
 
+function legendStops(type) {
+  if (type === "temperature") {
+    return {
+      gradient:
+        "linear-gradient(90deg,#7e57c2,#3f51b5,#2196f3,#26a69a,#fdd835,#fb8c00,#e53935,#8e0000)",
+      ticks: ["0 C", "16 C", "32 C", "44 C"],
+    };
+  }
+
+  return {
+    gradient:
+      "linear-gradient(90deg,#f7fbff,#c7e9b4,#41b6c4,#2c7fb8,#fdae61,#d7191c,#6a1b9a)",
+    ticks: ["0 mm", "5 mm", "30 mm", "60+ mm"],
+  };
+}
+
 function gridCells(type, keyName, points) {
   const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
   const cellWidth = (mapGridStepDegrees / (maxLon - minLon)) * 1000 + 1;
@@ -257,19 +273,17 @@ function gridCells(type, keyName, points) {
   return cells.join("");
 }
 
-function buildUrl(model, points, variables) {
-  const params = new URLSearchParams({
-    latitude: points.map((point) => point.latitude).join(","),
-    longitude: points.map((point) => point.longitude).join(","),
-    hourly: variables.join(","),
+function requestBody(points, variables) {
+  return {
+    latitude: points.map((point) => point.latitude),
+    longitude: points.map((point) => point.longitude),
+    hourly: variables,
     timezone: "Asia/Kolkata",
-    forecast_hours: "49",
+    forecast_hours: 49,
     wind_speed_unit: "kmh",
     precipitation_unit: "mm",
     temperature_unit: "celsius",
-  });
-
-  return `${model.endpoint}?${params.toString()}`;
+  };
 }
 
 function extractValue(data, variable, hoursAhead) {
@@ -289,7 +303,13 @@ function extractValue(data, variable, hoursAhead) {
 }
 
 async function fetchPointForecasts(model, points, variables) {
-  const response = await fetch(buildUrl(model, points, variables));
+  const response = await fetch(model.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody(points, variables)),
+  });
 
   if (!response.ok) {
     throw new Error(`${model.label} forecast unavailable`);
@@ -391,23 +411,14 @@ function formatLeadTime(points, key) {
 }
 
 function renderLegend(type) {
-  if (type === "temperature") {
-    return `
-      <div class="forecast-legend">
-        <span><i style="background:#3f51b5"></i>Cold</span>
-        <span><i style="background:#26a69a"></i>Mild</span>
-        <span><i style="background:#fdd835"></i>Warm</span>
-        <span><i style="background:#e53935"></i>Hot</span>
-      </div>
-    `;
-  }
+  const stops = legendStops(type);
 
   return `
-    <div class="forecast-legend">
-      <span><i style="background:#f7fbff"></i>Dry</span>
-      <span><i style="background:#41b6c4"></i>Light</span>
-      <span><i style="background:#2c7fb8"></i>Moderate</span>
-      <span><i style="background:#d7191c"></i>Heavy</span>
+    <div class="forecast-colorbar" aria-label="${type} color scale">
+      <i style="background:${stops.gradient}"></i>
+      <div>
+        ${stops.ticks.map((tick) => `<span>${tick}</span>`).join("")}
+      </div>
     </div>
   `;
 }
