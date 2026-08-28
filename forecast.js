@@ -48,7 +48,8 @@ const cityVariables = [
   "pressure_msl",
 ];
 const mapVariables = ["temperature_2m", "precipitation"];
-const mapGridStepDegrees = 0.5;
+const preferredMapGridStepDegrees = 0.5;
+const fallbackMapGridStepDegrees = 1;
 const requestBatchSize = 900;
 const requestConcurrency = 1;
 
@@ -58,12 +59,14 @@ const models = {
     label: "GFS",
     name: "NOAA GFS",
     endpoint: "https://api.open-meteo.com/v1/gfs",
+    dataUrl: "assets/data/forecast-gfs.json",
   },
   ifs: {
     key: "ifs",
     label: "IFS",
     name: "ECMWF IFS",
     endpoint: "https://api.open-meteo.com/v1/ecmwf",
+    dataUrl: "assets/data/forecast-ifs.json",
   },
 };
 
@@ -78,7 +81,7 @@ const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
 let indiaBoundary = null;
 let currentMapPoints = [];
-let indiaGridPoints = null;
+const indiaGridPointsByStep = new Map();
 
 function populateCities() {
   citySelect.innerHTML = cityLocations
@@ -165,9 +168,9 @@ function pointInIndia(longitude, latitude) {
   );
 }
 
-function buildIndiaGrid() {
-  if (indiaGridPoints) {
-    return indiaGridPoints;
+function buildIndiaGrid(gridStepDegrees) {
+  if (indiaGridPointsByStep.has(gridStepDegrees)) {
+    return indiaGridPointsByStep.get(gridStepDegrees);
   }
 
   const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
@@ -176,12 +179,12 @@ function buildIndiaGrid() {
   for (
     let latitude = Math.floor(minLat);
     latitude <= Math.ceil(maxLat);
-    latitude += mapGridStepDegrees
+    latitude += gridStepDegrees
   ) {
     for (
       let longitude = Math.floor(minLon);
       longitude <= Math.ceil(maxLon);
-      longitude += mapGridStepDegrees
+      longitude += gridStepDegrees
     ) {
       if (pointInIndia(longitude, latitude)) {
         points.push({
@@ -193,8 +196,8 @@ function buildIndiaGrid() {
     }
   }
 
-  indiaGridPoints = points;
-  return indiaGridPoints;
+  indiaGridPointsByStep.set(gridStepDegrees, points);
+  return points;
 }
 
 function nearestIndex(times, targetDate) {
@@ -249,10 +252,10 @@ function legendStops(type) {
   };
 }
 
-function gridCells(type, keyName, points) {
+function gridCells(type, keyName, points, gridStepDegrees) {
   const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
-  const cellWidth = (mapGridStepDegrees / (maxLon - minLon)) * 1000 + 1;
-  const cellHeight = (mapGridStepDegrees / (maxLat - minLat)) * 1030 + 1;
+  const cellWidth = (gridStepDegrees / (maxLon - minLon)) * 1000 + 1;
+  const cellHeight = (gridStepDegrees / (maxLat - minLat)) * 1030 + 1;
   const cells = [];
 
   points.forEach((point) => {
@@ -312,7 +315,9 @@ async function fetchPointForecasts(model, points, variables) {
   });
 
   if (!response.ok) {
-    throw new Error(`${model.label} forecast unavailable`);
+    const error = new Error(`${model.label} forecast unavailable`);
+    error.status = response.status;
+    throw error;
   }
 
   const payload = await response.json();
@@ -443,7 +448,7 @@ function renderMapCard({ title, type, keyName, unit, model, points }) {
           </clipPath>
         </defs>
         <g class="forecast-field" clip-path="url(#${clipId})">
-          ${gridCells(type, keyName, points)}
+          ${gridCells(type, keyName, points, points.gridStepDegrees)}
         </g>
         <g class="india-map-shape">
           ${boundaryPaths()}
@@ -472,6 +477,37 @@ function renderMaps(model, points) {
   ]
     .map((config) => renderMapCard({ ...config, model, points }))
     .join("");
+}
+
+async function fetchMapForecasts(model) {
+  try {
+    const gridPoints = buildIndiaGrid(preferredMapGridStepDegrees);
+    const points = await fetchForecastBatches(model, gridPoints, mapVariables);
+    points.gridStepDegrees = preferredMapGridStepDegrees;
+    return points;
+  } catch (error) {
+    if (error.status !== 429) {
+      throw error;
+    }
+
+    const gridPoints = buildIndiaGrid(fallbackMapGridStepDegrees);
+    const points = await fetchForecastBatches(model, gridPoints, mapVariables);
+    points.gridStepDegrees = fallbackMapGridStepDegrees;
+    points.usedFallbackGrid = true;
+    return points;
+  }
+}
+
+async function fetchCachedForecast(model) {
+  const response = await fetch(`${model.dataUrl}?v=${Date.now()}`);
+  if (!response.ok) {
+    throw new Error("Cached forecast unavailable");
+  }
+
+  const forecast = await response.json();
+  forecast.map_points.gridStepDegrees =
+    forecast.grid_step_degrees || preferredMapGridStepDegrees;
+  return forecast;
 }
 
 function renderCityDetails(points) {
@@ -532,15 +568,34 @@ async function loadForecast() {
 
   try {
     await fetchBoundary();
-    const gridPoints = buildIndiaGrid();
-    const [mapPoints, cityPoints] = await Promise.all([
-      fetchForecastBatches(model, gridPoints, mapVariables),
-      fetchForecastBatches(model, cityLocations, cityVariables),
-    ]);
+    let mapPoints;
+    let cityPoints;
+    let sourceLabel = "";
+
+    try {
+      const cachedForecast = await fetchCachedForecast(model);
+      mapPoints = cachedForecast.map_points;
+      cityPoints = cachedForecast.city_points;
+      sourceLabel = " cached";
+    } catch {
+      mapPoints = await fetchMapForecasts(model);
+      cityPoints = await fetchForecastBatches(
+        model,
+        cityLocations,
+        cityVariables,
+      ).catch(() => []);
+    }
+
     currentMapPoints = cityPoints;
     renderMaps(model, mapPoints);
-    renderCityDetails(cityPoints);
-    setStatus(`${model.label} maps loaded.`);
+    if (cityPoints.length) {
+      renderCityDetails(cityPoints);
+    }
+    setStatus(
+      mapPoints.usedFallbackGrid
+        ? `${model.label} maps loaded at 1.0 degree grid.`
+        : `${model.label}${sourceLabel} maps loaded at ${mapPoints.gridStepDegrees} degree grid.`,
+    );
   } catch (error) {
     setStatus(error.message || "Forecast maps unavailable.", true);
   }
