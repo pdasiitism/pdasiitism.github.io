@@ -6,12 +6,12 @@
     <title>Prabal Das, Ph.D. | Interactive CV</title>
     <meta
       name="description"
-      content="An interactive academic CV for hydro-meteorology, climate science, AI weather forecasting, and Bayesian-network research."
+      content="Interactive academic CV for Prabal Das, Ph.D., covering hydro-meteorology, climate science, AI weather forecasting, publications, book chapters, and conference presentations."
     />
     <meta property="og:title" content="Prabal Das, Ph.D. | Interactive CV" />
     <meta
       property="og:description"
-      content="Explore research focus areas, publications, skills, experience, education, awards, and contact details."
+      content="Explore Prabal Das's research, publications, book chapters, presentations, experience, skills, and contact links."
     />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/Nikon-2554.jpg?v=1" />
@@ -19,7 +19,7 @@
     <meta name="twitter:title" content="Prabal Das, Ph.D. | Interactive CV" />
     <meta
       name="twitter:description"
-      content="Explore research focus areas, publications, skills, experience, education, awards, and contact details."
+      content="Explore Prabal Das's research, publications, book chapters, presentations, experience, skills, and contact links."
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
@@ -29,27 +29,35 @@
     <main class="profile-site">
       <section class="hero-section" aria-labelledby="profile-title">
         <nav class="topbar" aria-label="Profile navigation">
-          <a href="#research">Research</a>
-          <a href="#skills">Skills</a>
-          <a href="#experience">Experience</a>
+          <a href="#about">About</a>
+          <a href="#cv">CV</a>
           <a href="#contact">Contact</a>
+          <a href="https://github.com/pdasiitism" rel="noreferrer" target="_blank">GitHub</a>
         </nav>
 
-        <div class="hero-grid">
+        <div class="hero-grid" id="about">
           <div class="hero-copy">
             <p class="eyebrow">Interactive Academic CV</p>
             <h1 id="profile-title">Prabal Das, Ph.D.</h1>
             <p class="hero-summary">
-              Hydro-meteorology, climate science, and AI weather forecasting
-              researcher building machine-learning and Bayesian-network methods
-              for rainfall, streamflow, drought, and precipitation-type
-              prediction.
+              I am a hydro-meteorology and climate science researcher working at
+              the intersection of machine learning, Bayesian networks, numerical
+              weather prediction, and hydrologic risk. My work focuses on
+              improving rainfall, streamflow, drought, climate-extreme, and
+              winter precipitation-type prediction using explainable and
+              operationally useful data-driven methods.
+            </p>
+            <p class="hero-summary hero-summary-small">
+              I currently serve as Lead Researcher for Human Centered Weather
+              Forecasting at the Development Innovation Lab - India, University
+              of Chicago Trust. Previously, I worked as a Post-Doctoral Research
+              Associate and Adjunct Professor at The University of Texas at
+              Arlington, following my Ph.D. in Engineering from IIT (ISM)
+              Dhanbad.
             </p>
             <div class="hero-actions" aria-label="Primary profile actions">
-              <a class="primary-action" href="#research">Explore Research</a>
-              <a class="secondary-action" href="mailto:prabal@uchicagotrust.org">
-                Contact
-              </a>
+              <a class="primary-action" href="#cv">Explore CV</a>
+              <a class="secondary-action" href="mailto:prabal@uchicagotrust.org">Email Prabal</a>
             </div>
           </div>
 
@@ -73,7 +81,7 @@
                 aria-label="Show previous profile photo"
                 data-photo-nav="prev"
               >
-                ‹
+                &lsaquo;
               </button>
               <button
                 class="portrait-nav portrait-next"
@@ -81,21 +89,12 @@
                 aria-label="Show next profile photo"
                 data-photo-nav="next"
               >
-                ›
+                &rsaquo;
               </button>
             </div>
             <div class="portrait-dots" aria-label="Profile photo selection">
-              <button
-                class="active"
-                type="button"
-                aria-label="Show formal portrait"
-                data-photo-dot="0"
-              ></button>
-              <button
-                type="button"
-                aria-label="Show close-up portrait"
-                data-photo-dot="1"
-              ></button>
+              <button class="active" type="button" aria-label="Show formal portrait" data-photo-dot="0"></button>
+              <button type="button" aria-label="Show close-up portrait" data-photo-dot="1"></button>
             </div>
             <div class="availability">
               <span class="status-dot"></span>
@@ -107,187 +106,186 @@
                 <dd>9</dd>
               </div>
               <div>
-                <dt>Research themes</dt>
-                <dd>3</dd>
+                <dt>Book chapters</dt>
+                <dd>2</dd>
               </div>
               <div>
-                <dt>Current base</dt>
-                <dd>India</dd>
+                <dt>Presentations</dt>
+                <dd>12</dd>
               </div>
             </dl>
           </aside>
         </div>
       </section>
 
-      <section class="section-band research-band" id="research">
+      <section class="section-band cv-shell" id="cv">
         <div class="section-heading">
-          <p class="eyebrow">Research Portfolio</p>
-          <h2>Filter selected publications by focus area</h2>
+          <p class="eyebrow">CV Explorer</p>
+          <h2>Browse the complete academic profile</h2>
         </div>
 
-        <div class="segmented-control" aria-label="Filter publications">
-          <button class="active" data-filter="All" type="button">All</button>
-          <button data-filter="Forecasting" type="button">Forecasting</button>
-          <button data-filter="Hydrology" type="button">Hydrology</button>
-          <button data-filter="Climate Risk" type="button">Climate Risk</button>
+        <div class="tab-list" role="tablist" aria-label="CV sections">
+          <button class="active" id="tab-publications" type="button" role="tab" aria-selected="true" aria-controls="panel-publications" data-tab="publications">Publications</button>
+          <button id="tab-books" type="button" role="tab" aria-selected="false" aria-controls="panel-books" data-tab="books">Book Chapters</button>
+          <button id="tab-presentations" type="button" role="tab" aria-selected="false" aria-controls="panel-presentations" data-tab="presentations">Conferences</button>
+          <button id="tab-experience" type="button" role="tab" aria-selected="false" aria-controls="panel-experience" data-tab="experience">Experience</button>
+          <button id="tab-education" type="button" role="tab" aria-selected="false" aria-controls="panel-education" data-tab="education">Education</button>
+          <button id="tab-skills" type="button" role="tab" aria-selected="false" aria-controls="panel-skills" data-tab="skills">Skills</button>
+          <button id="tab-awards" type="button" role="tab" aria-selected="false" aria-controls="panel-awards" data-tab="awards">Awards</button>
         </div>
 
-        <div class="publication-grid" id="publication-grid" aria-live="polite"></div>
-      </section>
-
-      <section class="section-band skills-band" id="skills">
-        <div class="section-heading">
-          <p class="eyebrow">Core Competencies</p>
-          <h2>Tap a capability to inspect emphasis</h2>
-        </div>
-
-        <div class="skills-layout">
-          <div class="skill-meter" aria-label="Selected capability strength">
-            <div class="meter-ring" id="meter-ring" style="--meter-value: 96%">
-              <span id="meter-value">96</span>
-            </div>
+        <section class="tab-panel active" id="panel-publications" role="tabpanel" aria-labelledby="tab-publications">
+          <div class="panel-header">
             <div>
-              <h3 id="skill-title">Hydro-meteorology</h3>
-              <p>
-                Built across research in supervised learning, deep learning,
-                time-series forecasting, numerical weather prediction, NetCDF,
-                Grib, GIS, and high-performance computing environments.
-              </p>
+              <p class="eyebrow">Peer-Reviewed Journals</p>
+              <h3>Complete publication list from the CV</h3>
+            </div>
+            <div class="segmented-control" aria-label="Filter publications">
+              <button class="active" data-filter="All" type="button">All</button>
+              <button data-filter="Forecasting" type="button">Forecasting</button>
+              <button data-filter="Hydrology" type="button">Hydrology</button>
+              <button data-filter="Climate Risk" type="button">Climate Risk</button>
+              <button data-filter="Water Storage" type="button">Water Storage</button>
+              <button data-filter="Drought" type="button">Drought</button>
             </div>
           </div>
+          <div class="publication-grid" id="publication-grid" aria-live="polite"></div>
+        </section>
 
-          <div class="skill-list" id="skill-list" role="list"></div>
-        </div>
-      </section>
+        <section class="tab-panel" id="panel-books" role="tabpanel" aria-labelledby="tab-books" hidden>
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Book Chapters</p>
+              <h3>Edited-volume and textbook contributions</h3>
+            </div>
+          </div>
+          <div class="publication-grid compact-grid" id="book-grid"></div>
+        </section>
 
-      <section class="section-band experience-band" id="experience">
-        <div class="section-heading">
-          <p class="eyebrow">Experience</p>
-          <h2>Research, teaching, and applied delivery</h2>
-        </div>
-        <div class="timeline">
-          <article>
-            <span>Apr 2026 - Present</span>
+        <section class="tab-panel" id="panel-presentations" role="tabpanel" aria-labelledby="tab-presentations" hidden>
+          <div class="panel-header">
             <div>
-              <h3>Lead Researcher, Human Centered Weather Forecasting</h3>
-              <p>Development Innovation Lab - India, University of Chicago Trust · India</p>
+              <p class="eyebrow">Presentations</p>
+              <h3>Conferences and workshops</h3>
             </div>
-          </article>
-          <article>
-            <span>Dec 2023 - Mar 2026</span>
-            <div>
-              <h3>Post-Doctoral Research Associate</h3>
-              <p>Department of Civil Engineering, The University of Texas · Arlington, USA</p>
-            </div>
-          </article>
-          <article>
-            <span>Summer 2025 and Fall 2025-26</span>
-            <div>
-              <h3>Adjunct Professor</h3>
-              <p>Department of Civil Engineering, The University of Texas · Arlington, USA</p>
-            </div>
-          </article>
-          <article>
-            <span>2017 - 2018</span>
-            <div>
-              <h3>Assistant Professor</h3>
-              <p>Vignan Institute of Technology and Science; IMPS College · India</p>
-            </div>
-          </article>
-        </div>
-      </section>
+          </div>
+          <div class="conference-grid" id="conference-grid"></div>
+        </section>
 
-      <section class="section-band split-band">
-        <div>
-          <div class="section-heading">
-            <p class="eyebrow">Education</p>
-            <h2>Academic foundation</h2>
+        <section class="tab-panel" id="panel-experience" role="tabpanel" aria-labelledby="tab-experience" hidden>
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Experience</p>
+              <h3>Research, teaching, and applied delivery</h3>
+            </div>
+          </div>
+          <div class="timeline">
+            <article>
+              <span>Apr 2026 - Present</span>
+              <div>
+                <h4>Lead Researcher, Human Centered Weather Forecasting</h4>
+                <p>Development Innovation Lab - India, University of Chicago Trust, India</p>
+              </div>
+            </article>
+            <article>
+              <span>Dec 2023 - Mar 2026</span>
+              <div>
+                <h4>Post-Doctoral Research Associate</h4>
+                <p>Department of Civil Engineering, The University of Texas, Arlington, USA</p>
+              </div>
+            </article>
+            <article>
+              <span>Summer 2025 and Fall 2025-26</span>
+              <div>
+                <h4>Adjunct Professor</h4>
+                <p>Department of Civil Engineering, The University of Texas, Arlington, USA</p>
+              </div>
+            </article>
+            <article>
+              <span>Jan 2018 - Jun 2018</span>
+              <div>
+                <h4>Assistant Professor</h4>
+                <p>IMPS College of Engineering and Technology, Malda, India</p>
+              </div>
+            </article>
+            <article>
+              <span>Jun 2017 - Dec 2017</span>
+              <div>
+                <h4>Assistant Professor</h4>
+                <p>Vignan Institute of Technology and Science, Hyderabad, India</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-education" role="tabpanel" aria-labelledby="tab-education" hidden>
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Education</p>
+              <h3>Academic foundation</h3>
+            </div>
           </div>
           <div class="education-list">
             <article>
-              <span>2018 - 2024</span>
-              <h3>Ph.D., Engineering</h3>
-              <p>Indian Institute of Technology (ISM) - Dhanbad</p>
-              <small>
-                Thesis on feature selection with Bayesian networks for
-                hydrometeorological understanding and prediction.
-              </small>
+              <span>Aug 2018 - Feb 2024</span>
+              <h4>Ph.D., Engineering</h4>
+              <p>Indian Institute of Technology (ISM) - Dhanbad, India</p>
+              <small>Thesis: "Unveiling Key Drivers in Hydrometeorological Processes: Feature Selection Using Bayesian Networks for Improved Understanding and Prediction"</small>
             </article>
             <article>
               <span>2015 - 2017</span>
-              <h3>M.Tech, Water Resources Engineering and Management</h3>
-              <p>National Institute of Technology Karnataka - Surathkal</p>
+              <h4>M.Tech, Water Resources Engineering and Management</h4>
+              <p>National Institute of Technology Karnataka - Surathkal, India</p>
               <small>CGPA: 8.53/10</small>
             </article>
             <article>
               <span>2010 - 2014</span>
-              <h3>B.Tech, Civil Engineering</h3>
-              <p>West Bengal University of Technology, Kolkata</p>
+              <h4>B.Tech, Civil Engineering</h4>
+              <p>West Bengal University of Technology, Kolkata, India</p>
               <small>CGPA: 8.3/10</small>
             </article>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <div class="section-heading">
-            <p class="eyebrow">Recognition</p>
-            <h2>Awards and service</h2>
+        <section class="tab-panel" id="panel-skills" role="tabpanel" aria-labelledby="tab-skills" hidden>
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Core Competencies</p>
+              <h3>Technical and domain capabilities</h3>
+            </div>
+          </div>
+          <div class="skills-layout">
+            <div class="skill-meter" aria-label="Selected capability strength">
+              <div class="meter-ring" id="meter-ring" style="--meter-value: 96%">
+                <span id="meter-value">96</span>
+              </div>
+              <div>
+                <h4 id="skill-title">Hydro-meteorology</h4>
+                <p>
+                  Built across research in supervised learning, deep learning,
+                  time-series forecasting, numerical weather prediction, NetCDF,
+                  Grib, GIS, and high-performance computing environments.
+                </p>
+              </div>
+            </div>
+            <div class="skill-list" id="skill-list" role="list"></div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-awards" role="tabpanel" aria-labelledby="tab-awards" hidden>
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Awards & Certifications</p>
+              <h3>Recognition and service</h3>
+            </div>
           </div>
           <ul class="recognition-list">
-            <li>
-              Reviewer for Journal of Hydrology, SERRA, Earth Science
-              Informatics, Journal of Hydrologic Engineering, Theoretical and
-              Applied Climatology, AMS Journals, and related venues.
-            </li>
+            <li>Reviewer for Journal of Hydrology, SERRA (Springer), Earth Science Informatics, Journal of Hydrologic Engineering, Theoretical and Applied Climatology, AMS Journals, and related venues.</li>
             <li>DST SERB Travel Grant for AGU 2022 and EGU 2023.</li>
-            <li>
-              Government of India - Ministry of Education Fellowship for
-              doctoral and M.Tech studies.
-            </li>
-            <li>
-              Certified in Microsoft Azure Cloud Services and Google Earth
-              Engine Applications.
-            </li>
+            <li>Government of India - Ministry of Education Fellowship for doctoral and M.Tech studies.</li>
+            <li>Certified in Microsoft Azure Cloud Services and Google Earth Engine Applications.</li>
           </ul>
-        </div>
-      </section>
-
-      <section class="section-band conference-band">
-        <div class="section-heading">
-          <p class="eyebrow">Presentations</p>
-          <h2>Conference and workshop highlights</h2>
-        </div>
-        <div class="conference-grid">
-          <article>
-            <span>01</span>
-            <p>
-              Physics-guided machine-learning post-processing for wintertime
-              precipitation type forecasting, AMS Annual Meeting 2026.
-            </p>
-          </article>
-          <article>
-            <span>02</span>
-            <p>
-              Extreme rainfall predictability and forecast-informed reservoir
-              operations, AMS Annual Meeting 2026.
-            </p>
-          </article>
-          <article>
-            <span>03</span>
-            <p>
-              Optimal GCM ensembles of high-resolution precipitation datasets
-              through Bayesian networks and U-Net analysis, HYDRO 2025.
-            </p>
-          </article>
-          <article>
-            <span>04</span>
-            <p>Enhancing precipitation type classification using random forests, UIFCW 2024.</p>
-          </article>
-          <article>
-            <span>05</span>
-            <p>Bayesian networks for regional rainfall prediction, AGU Fall Meeting 2022.</p>
-          </article>
-        </div>
+        </section>
       </section>
 
       <section class="contact-section" id="contact">
@@ -295,27 +293,21 @@
           <p class="eyebrow">Contact</p>
           <h2>Connect with Prabal</h2>
           <p>
-            Email, phone, ORCID, Google Scholar, LinkedIn, and ResearchGate are
-            surfaced from the CV and profile links.
+            For research, collaboration, and academic communication, use the
+            official email address or the linked academic profiles.
           </p>
         </div>
         <div class="contact-links">
           <div class="contact-actions" aria-label="Contact links">
-            <a class="primary-action" href="mailto:prabal@uchicagotrust.org">
-              prabal@uchicagotrust.org
-            </a>
-            <a class="secondary-action" href="mailto:prabal.nitk@gmail.com">
-              prabal.nitk@gmail.com
-            </a>
-            <a class="secondary-action" href="tel:+919609913479">
-              +91 9609913479
-            </a>
+            <a class="primary-action" href="mailto:prabal@uchicagotrust.org">prabal@uchicagotrust.org</a>
+            <a class="secondary-action" href="tel:+919609913479">+91 9609913479</a>
           </div>
           <div class="profile-link-grid" aria-label="Research profile links">
             <a href="https://orcid.org/0000-0003-3009-942X" rel="noreferrer" target="_blank">ORCID</a>
-            <a href="https://www.linkedin.com/in/prabal-das-453b61125/" rel="noreferrer" target="_blank">LinkedIn</a>
             <a href="https://scholar.google.com/citations?user=tzNdVMMAAAAJ&amp;hl=en" rel="noreferrer" target="_blank">Google Scholar</a>
             <a href="https://www.researchgate.net/profile/Prabal-Das?ev=hdr_xprf" rel="noreferrer" target="_blank">ResearchGate</a>
+            <a href="https://www.linkedin.com/in/prabal-das-453b61125/" rel="noreferrer" target="_blank">LinkedIn</a>
+            <a href="https://github.com/pdasiitism" rel="noreferrer" target="_blank">GitHub</a>
           </div>
         </div>
       </section>
