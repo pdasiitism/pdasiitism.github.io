@@ -6,12 +6,12 @@
     <title>India Forecast Lab | Prabal Das</title>
     <meta
       name="description"
-      content="A compact India forecast comparison page using Open-Meteo's GFS and ECMWF IFS APIs for 24-hour and 48-hour outlooks."
+      content="India forecast maps for rainfall and temperature at 24-hour and 48-hour lead times."
     />
     <meta property="og:title" content="India Forecast Lab | Prabal Das" />
     <meta
       property="og:description"
-      content="Compare GFS and ECMWF IFS 24-hour and 48-hour forecast snapshots for major Indian locations."
+      content="Compare India rainfall and temperature maps at 24-hour and 48-hour lead times."
     />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/Nikon-2554.jpg?v=1" />
@@ -19,11 +19,11 @@
     <meta name="twitter:title" content="India Forecast Lab | Prabal Das" />
     <meta
       name="twitter:description"
-      content="Compare GFS and ECMWF IFS 24-hour and 48-hour forecast snapshots for major Indian locations."
+      content="Compare India rainfall and temperature maps at 24-hour and 48-hour lead times."
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <main class="forecast-page">
@@ -40,26 +40,23 @@
         <div class="forecast-hero-grid">
           <div>
             <p class="eyebrow">India Forecast Lab</p>
-            <h1 id="forecast-title">GFS vs IFS</h1>
-            <p class="hero-summary">
-              A compact 24-hour and 48-hour forecast comparison for India using
-              Open-Meteo's NOAA GFS and ECMWF IFS endpoints. Select a location
-              to compare temperature, rainfall, wind, cloud cover, and pressure
-              snapshots from both models.
-            </p>
+            <h1 id="forecast-title">Forecast Maps</h1>
+            <p class="forecast-kicker">Rainfall and temperature at 24h and 48h</p>
           </div>
           <form class="forecast-control" id="forecast-form">
-            <label for="location-select">Location</label>
-            <select id="location-select" name="location"></select>
+            <label for="model-select">Model</label>
+            <select id="model-select" name="model">
+              <option value="gfs">GFS</option>
+              <option value="ifs">IFS</option>
+            </select>
             <button class="primary-action" type="submit">Refresh Forecast</button>
             <p id="forecast-status" role="status">Loading forecast...</p>
           </form>
         </div>
       </section>
 
-      <section class="forecast-board" aria-label="Model comparison">
-        <div class="forecast-summary" id="forecast-summary"></div>
-        <div class="model-grid" id="model-grid"></div>
+      <section class="forecast-board" aria-label="India forecast maps">
+        <div class="forecast-map-grid" id="forecast-map-grid"></div>
       </section>
     </main>
     <div class="profile-modal" id="profile-modal" aria-hidden="true">
@@ -84,6 +81,6 @@
         </div>
       </section>
     </div>
-    <script src="forecast.js?v=2"></script>
+    <script src="forecast.js?v=4"></script>
   </body>
 </html>

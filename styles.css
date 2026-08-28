@@ -861,7 +861,7 @@ h1 {
 
 .forecast-hero,
 .forecast-board {
-  padding: 48px clamp(20px, 5vw, 72px);
+  padding: 34px clamp(20px, 5vw, 72px);
 }
 
 .forecast-hero {
@@ -869,7 +869,7 @@ h1 {
 }
 
 .forecast-topbar {
-  margin-bottom: 84px;
+  margin-bottom: 46px;
 }
 
 .forecast-topbar a[aria-current="page"] {
@@ -881,12 +881,21 @@ h1 {
 .forecast-hero-grid {
   align-items: end;
   display: grid;
-  gap: 42px;
+  gap: 28px;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
 }
 
 .forecast-hero h1 {
-  font-size: clamp(4rem, 11vw, 9rem);
+  font-size: clamp(3.3rem, 8vw, 6.8rem);
+  margin-bottom: 12px;
+}
+
+.forecast-kicker {
+  color: #344047;
+  font-size: clamp(1.08rem, 1.8vw, 1.45rem);
+  font-weight: 850;
+  line-height: 1.35;
+  margin: 0;
 }
 
 .forecast-control {
@@ -934,111 +943,174 @@ h1 {
   gap: 20px;
 }
 
-.forecast-summary {
+.forecast-map-grid {
   display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.forecast-summary article,
-.model-card,
-.snapshot-card {
+.india-map-card {
   background: rgba(255, 255, 255, 0.64);
   border: 1px solid var(--line);
   border-radius: 8px;
-}
-
-.forecast-summary article {
   display: grid;
-  gap: 5px;
+  gap: 14px;
+  min-height: 520px;
   padding: 18px;
 }
 
-.forecast-summary span,
-.model-card-header span,
-.snapshot-label {
+.india-map-card header {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.india-map-card header span {
   color: var(--brick);
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-.forecast-summary strong {
-  color: #203036;
-  font-size: 1.28rem;
-  line-height: 1.15;
-}
-
-.forecast-summary small,
-.model-card-header p {
-  color: var(--ink-muted);
-  line-height: 1.5;
-}
-
-.model-grid {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.model-card {
-  display: grid;
-  gap: 18px;
-  padding: 22px;
-}
-
-.model-card-header h2 {
-  font-size: clamp(1.8rem, 4vw, 3.2rem);
-  line-height: 1;
-  margin-bottom: 8px;
-}
-
-.snapshot-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.snapshot-card {
-  background: var(--panel);
-  display: grid;
-  gap: 16px;
-  padding: 18px;
-}
-
-.snapshot-card h3 {
-  font-size: 1.5rem;
+.india-map-card h2 {
+  font-size: clamp(1.45rem, 3vw, 2.3rem);
   line-height: 1;
   margin-bottom: 0;
 }
 
-.snapshot-card dl {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-}
-
-.snapshot-card dl div {
-  align-items: baseline;
-  border-top: 1px solid var(--line);
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  padding-top: 10px;
-}
-
-.snapshot-card dt {
+.india-map-card header p {
   color: var(--ink-muted);
-  font-size: 0.82rem;
+  flex: 0 0 auto;
   font-weight: 850;
-}
-
-.snapshot-card dd {
-  color: var(--accent-strong);
-  font-size: 1.06rem;
-  font-weight: 950;
   margin: 0;
   text-align: right;
+}
+
+.india-map {
+  background:
+    linear-gradient(rgba(14, 124, 123, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 124, 123, 0.08) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(217, 240, 236, 0.82), rgba(255, 250, 241, 0.96));
+  background-size: 20% 20%, 20% 20%, auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 390px;
+  overflow: hidden;
+  position: relative;
+}
+
+.india-map::before {
+  background:
+    radial-gradient(ellipse at 56% 18%, rgba(14, 124, 123, 0.12), transparent 0 18%),
+    radial-gradient(ellipse at 50% 46%, rgba(14, 124, 123, 0.12), transparent 0 24%),
+    radial-gradient(ellipse at 44% 72%, rgba(14, 124, 123, 0.12), transparent 0 18%);
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.map-region {
+  color: rgba(32, 48, 54, 0.34);
+  font-size: 0.78rem;
+  font-weight: 950;
+  position: absolute;
+  text-transform: uppercase;
+}
+
+.map-region.north {
+  left: 42%;
+  top: 7%;
+}
+
+.map-region.west {
+  left: 9%;
+  top: 44%;
+}
+
+.map-region.east {
+  right: 10%;
+  top: 38%;
+}
+
+.map-region.south {
+  bottom: 8%;
+  left: 43%;
+}
+
+.map-marker {
+  align-items: center;
+  background: var(--marker-color);
+  border: 2px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(23, 27, 31, 0.2);
+  color: #fff;
+  cursor: help;
+  display: flex;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 950;
+  height: var(--marker-size);
+  justify-content: center;
+  line-height: 1;
+  min-height: 12px;
+  min-width: 12px;
+  padding: 0;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: var(--marker-size);
+  z-index: 2;
+}
+
+.map-marker.rainfall {
+  color: #1d252b;
+}
+
+.map-marker.rainfall span {
+  display: none;
+}
+
+.map-marker:focus-visible,
+.map-marker:hover {
+  outline: 3px solid rgba(23, 27, 31, 0.26);
+  outline-offset: 2px;
+  z-index: 3;
+}
+
+.india-map-card footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.india-map-card footer > span {
+  color: var(--accent-strong);
+  font-weight: 950;
+}
+
+.forecast-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.forecast-legend span {
+  align-items: center;
+  color: var(--ink-muted);
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 850;
+  gap: 5px;
+}
+
+.forecast-legend i {
+  border-radius: 999px;
+  display: inline-block;
+  height: 10px;
+  width: 10px;
 }
 
 @media (max-width: 980px) {
@@ -1052,8 +1124,7 @@ h1 {
 
   .publication-grid,
   .conference-grid,
-  .model-grid,
-  .snapshot-grid {
+  .forecast-map-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1081,7 +1152,7 @@ h1 {
   }
 
   .forecast-topbar {
-    margin-bottom: 44px;
+    margin-bottom: 30px;
   }
 
   .topbar {
@@ -1097,13 +1168,31 @@ h1 {
   .impact-stats,
   .publication-grid,
   .conference-grid,
-  .forecast-summary,
-  .model-grid,
-  .snapshot-grid,
+  .forecast-map-grid,
   .compact-grid,
   .skill-meter,
   .timeline article {
     grid-template-columns: 1fr;
+  }
+
+  .india-map-card {
+    min-height: 470px;
+  }
+
+  .india-map {
+    min-height: 340px;
+  }
+
+  .india-map-card header,
+  .india-map-card footer {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .india-map-card header p,
+  .forecast-legend {
+    justify-content: flex-start;
+    text-align: left;
   }
 
   .publication-card {

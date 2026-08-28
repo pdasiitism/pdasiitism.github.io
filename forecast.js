@@ -1,55 +1,62 @@
-const locations = [
+const samplePoints = [
+  { name: "Srinagar", latitude: 34.0837, longitude: 74.7973 },
+  { name: "Leh", latitude: 34.1526, longitude: 77.5771 },
+  { name: "Amritsar", latitude: 31.634, longitude: 74.8723 },
   { name: "New Delhi", latitude: 28.6139, longitude: 77.209 },
-  { name: "Mumbai", latitude: 19.076, longitude: 72.8777 },
-  { name: "Kolkata", latitude: 22.5726, longitude: 88.3639 },
-  { name: "Chennai", latitude: 13.0827, longitude: 80.2707 },
-  { name: "Bengaluru", latitude: 12.9716, longitude: 77.5946 },
-  { name: "Hyderabad", latitude: 17.385, longitude: 78.4867 },
+  { name: "Jaipur", latitude: 26.9124, longitude: 75.7873 },
+  { name: "Lucknow", latitude: 26.8467, longitude: 80.9462 },
+  { name: "Patna", latitude: 25.5941, longitude: 85.1376 },
   { name: "Guwahati", latitude: 26.1445, longitude: 91.7362 },
+  { name: "Shillong", latitude: 25.5788, longitude: 91.8933 },
   { name: "Ahmedabad", latitude: 23.0225, longitude: 72.5714 },
-  { name: "Bhubaneswar", latitude: 20.2961, longitude: 85.8245 },
+  { name: "Bhopal", latitude: 23.2599, longitude: 77.4126 },
   { name: "Dhanbad", latitude: 23.7957, longitude: 86.4304 },
+  { name: "Kolkata", latitude: 22.5726, longitude: 88.3639 },
+  { name: "Bhubaneswar", latitude: 20.2961, longitude: 85.8245 },
+  { name: "Mumbai", latitude: 19.076, longitude: 72.8777 },
+  { name: "Nagpur", latitude: 21.1458, longitude: 79.0882 },
+  { name: "Raipur", latitude: 21.2514, longitude: 81.6296 },
+  { name: "Visakhapatnam", latitude: 17.6868, longitude: 83.2185 },
+  { name: "Hyderabad", latitude: 17.385, longitude: 78.4867 },
+  { name: "Panaji", latitude: 15.4909, longitude: 73.8278 },
+  { name: "Bengaluru", latitude: 12.9716, longitude: 77.5946 },
+  { name: "Chennai", latitude: 13.0827, longitude: 80.2707 },
+  { name: "Kochi", latitude: 9.9312, longitude: 76.2673 },
+  { name: "Thiruvananthapuram", latitude: 8.5241, longitude: 76.9366 },
+  { name: "Port Blair", latitude: 11.6234, longitude: 92.7265 },
 ];
 
-const variables = [
-  "temperature_2m",
-  "precipitation",
-  "wind_speed_10m",
-  "wind_gusts_10m",
-  "cloud_cover",
-  "pressure_msl",
-];
+const mapBounds = {
+  minLat: 6,
+  maxLat: 36,
+  minLon: 68,
+  maxLon: 94,
+};
 
-const models = [
-  {
+const variables = ["temperature_2m", "precipitation"];
+
+const models = {
+  gfs: {
     key: "gfs",
+    label: "GFS",
     name: "NOAA GFS",
     endpoint: "https://api.open-meteo.com/v1/gfs",
   },
-  {
+  ifs: {
     key: "ifs",
+    label: "IFS",
     name: "ECMWF IFS",
     endpoint: "https://api.open-meteo.com/v1/ecmwf",
   },
-];
+};
 
-const locationSelect = document.querySelector("#location-select");
+const modelSelect = document.querySelector("#model-select");
 const forecastForm = document.querySelector("#forecast-form");
 const statusEl = document.querySelector("#forecast-status");
-const summaryEl = document.querySelector("#forecast-summary");
-const modelGrid = document.querySelector("#model-grid");
+const mapGrid = document.querySelector("#forecast-map-grid");
 const profileModal = document.querySelector("#profile-modal");
 const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")];
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
-
-function populateLocations() {
-  locationSelect.innerHTML = locations
-    .map(
-      (location, index) =>
-        `<option value="${index}">${location.name}</option>`,
-    )
-    .join("");
-}
 
 function formatNumber(value, digits = 1) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) {
@@ -57,6 +64,23 @@ function formatNumber(value, digits = 1) {
   }
 
   return Number(value).toFixed(digits);
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function pointStyle(point) {
+  const x =
+    ((point.longitude - mapBounds.minLon) /
+      (mapBounds.maxLon - mapBounds.minLon)) *
+    100;
+  const y =
+    ((mapBounds.maxLat - point.latitude) /
+      (mapBounds.maxLat - mapBounds.minLat)) *
+    100;
+
+  return `left:${clamp(x, 0, 100)}%;top:${clamp(y, 0, 100)}%;`;
 }
 
 function nearestIndex(times, targetDate) {
@@ -74,30 +98,39 @@ function nearestIndex(times, targetDate) {
   return bestIndex;
 }
 
-function extractSnapshot(data, hoursAhead) {
-  const target = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
-  const index = nearestIndex(data.hourly.time, target);
-  const hour = data.hourly.time[index];
-
-  return {
-    hour,
-    temperature: data.hourly.temperature_2m[index],
-    precipitation: data.hourly.precipitation[index],
-    wind: data.hourly.wind_speed_10m[index],
-    gust: data.hourly.wind_gusts_10m[index],
-    cloud: data.hourly.cloud_cover[index],
-    pressure: data.hourly.pressure_msl[index],
-  };
+function temperatureColor(value) {
+  if (value < 10) return "#355caa";
+  if (value < 18) return "#2f8ac4";
+  if (value < 26) return "#19a974";
+  if (value < 34) return "#e0a526";
+  if (value < 40) return "#d66b2f";
+  return "#b83232";
 }
 
-function buildUrl(model, location) {
+function rainfallColor(value) {
+  if (value <= 0) return "#d9e1dd";
+  if (value < 1) return "#b7e4d6";
+  if (value < 5) return "#65c3b4";
+  if (value < 15) return "#1f8fbe";
+  if (value < 30) return "#3763ad";
+  return "#5c2f99";
+}
+
+function markerSize(type, value) {
+  if (type === "temperature") {
+    return 18;
+  }
+
+  return clamp(12 + Math.sqrt(Math.max(value, 0)) * 5, 12, 34);
+}
+
+function buildUrl(model) {
   const params = new URLSearchParams({
-    latitude: location.latitude,
-    longitude: location.longitude,
+    latitude: samplePoints.map((point) => point.latitude).join(","),
+    longitude: samplePoints.map((point) => point.longitude).join(","),
     hourly: variables.join(","),
     timezone: "Asia/Kolkata",
     forecast_hours: "49",
-    wind_speed_unit: "kmh",
     precipitation_unit: "mm",
     temperature_unit: "celsius",
   });
@@ -105,108 +138,162 @@ function buildUrl(model, location) {
   return `${model.endpoint}?${params.toString()}`;
 }
 
-async function fetchModel(model, location) {
-  const response = await fetch(buildUrl(model, location));
-
-  if (!response.ok) {
-    throw new Error(`${model.name} returned ${response.status}`);
-  }
-
-  const data = await response.json();
+function extractValue(data, variable, hoursAhead) {
+  const target = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
+  const index = nearestIndex(data.hourly.time, target);
   return {
-    ...model,
-    generatedAt: new Date().toLocaleString("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone: "Asia/Kolkata",
-    }),
-    snapshots: [24, 48].map((hours) => ({
-      hours,
-      ...extractSnapshot(data, hours),
-    })),
+    time: data.hourly.time[index],
+    value: data.hourly[variable][index],
   };
 }
 
-function renderSummary(location, modelData) {
-  summaryEl.innerHTML = `
-    <article>
-      <span>Location</span>
-      <strong>${location.name}</strong>
-      <small>${location.latitude.toFixed(4)} N, ${location.longitude.toFixed(4)} E</small>
-    </article>
-    <article>
-      <span>Models</span>
-      <strong>${modelData.map((model) => model.name).join(" + ")}</strong>
-      <small>Open-Meteo browser API</small>
-    </article>
-    <article>
-      <span>Range</span>
-      <strong>24h and 48h</strong>
-      <small>Timezone: Asia/Kolkata</small>
-    </article>
+async function fetchForecast(model) {
+  const response = await fetch(buildUrl(model));
+
+  if (!response.ok) {
+    throw new Error(`${model.label} forecast unavailable`);
+  }
+
+  const payload = await response.json();
+  const locations = Array.isArray(payload) ? payload : [payload];
+
+  return samplePoints.map((point, index) => {
+    const data = locations[index];
+    return {
+      ...point,
+      t24: extractValue(data, "temperature_2m", 24),
+      t48: extractValue(data, "temperature_2m", 48),
+      r24: extractValue(data, "precipitation", 24),
+      r48: extractValue(data, "precipitation", 48),
+    };
+  });
+}
+
+function valueRange(points, key) {
+  const values = points
+    .map((point) => point[key].value)
+    .filter((value) => Number.isFinite(Number(value)))
+    .map(Number);
+
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
+}
+
+function formatLeadTime(points, key) {
+  const time = points.find((point) => point[key].time)?.[key].time;
+  if (!time) {
+    return "";
+  }
+
+  return new Date(time).toLocaleString("en-IN", {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
+}
+
+function renderLegend(type) {
+  if (type === "temperature") {
+    return `
+      <div class="forecast-legend">
+        <span><i style="background:#355caa"></i>Cool</span>
+        <span><i style="background:#19a974"></i>Mild</span>
+        <span><i style="background:#e0a526"></i>Warm</span>
+        <span><i style="background:#b83232"></i>Hot</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="forecast-legend">
+      <span><i style="background:#d9e1dd"></i>Dry</span>
+      <span><i style="background:#65c3b4"></i>Light</span>
+      <span><i style="background:#1f8fbe"></i>Moderate</span>
+      <span><i style="background:#5c2f99"></i>Heavy</span>
+    </div>
   `;
 }
 
-function renderModel(model) {
+function renderMapCard({ title, type, keyName, unit, model, points }) {
+  const range = valueRange(points, keyName);
+
   return `
-    <article class="model-card">
-      <div class="model-card-header">
-        <span>${model.key.toUpperCase()}</span>
-        <h2>${model.name}</h2>
-        <p>Updated in this view: ${model.generatedAt}</p>
-      </div>
-      <div class="snapshot-grid">
-        ${model.snapshots
-          .map(
-            (snapshot) => `
-              <section class="snapshot-card">
-                <div>
-                  <span class="snapshot-label">${snapshot.hours} hours ahead</span>
-                  <h3>${new Date(snapshot.hour).toLocaleString("en-IN", {
-                    weekday: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "Asia/Kolkata",
-                  })}</h3>
-                </div>
-                <dl>
-                  <div>
-                    <dt>Temperature</dt>
-                    <dd>${formatNumber(snapshot.temperature)} C</dd>
-                  </div>
-                  <div>
-                    <dt>Rainfall</dt>
-                    <dd>${formatNumber(snapshot.precipitation)} mm</dd>
-                  </div>
-                  <div>
-                    <dt>Wind</dt>
-                    <dd>${formatNumber(snapshot.wind)} km/h</dd>
-                  </div>
-                  <div>
-                    <dt>Gust</dt>
-                    <dd>${formatNumber(snapshot.gust)} km/h</dd>
-                  </div>
-                  <div>
-                    <dt>Cloud</dt>
-                    <dd>${formatNumber(snapshot.cloud, 0)}%</dd>
-                  </div>
-                  <div>
-                    <dt>MSL pressure</dt>
-                    <dd>${formatNumber(snapshot.pressure)} hPa</dd>
-                  </div>
-                </dl>
-              </section>
-            `,
-          )
+    <article class="india-map-card">
+      <header>
+        <div>
+          <span>${model.label}</span>
+          <h2>${title}</h2>
+        </div>
+        <p>${formatLeadTime(points, keyName)}</p>
+      </header>
+      <div class="india-map" role="img" aria-label="${title} forecast map for India">
+        <span class="map-region north">North</span>
+        <span class="map-region west">West</span>
+        <span class="map-region east">East</span>
+        <span class="map-region south">South</span>
+        ${points
+          .map((point) => {
+            const value = Number(point[keyName].value);
+            const color =
+              type === "temperature"
+                ? temperatureColor(value)
+                : rainfallColor(value);
+            const size = markerSize(type, value);
+
+            return `
+              <button
+                class="map-marker ${type}"
+                style="${pointStyle(point)}--marker-color:${color};--marker-size:${size}px;"
+                type="button"
+                title="${point.name}: ${formatNumber(value)} ${unit}"
+                aria-label="${point.name}: ${formatNumber(value)} ${unit}"
+              >
+                <span>${type === "temperature" ? formatNumber(value, 0) : formatNumber(value)}</span>
+              </button>
+            `;
+          })
           .join("")}
       </div>
+      <footer>
+        <span>${formatNumber(range.min)} to ${formatNumber(range.max)} ${unit}</span>
+        ${renderLegend(type)}
+      </footer>
     </article>
   `;
 }
 
-function renderForecast(location, modelData) {
-  renderSummary(location, modelData);
-  modelGrid.innerHTML = modelData.map(renderModel).join("");
+function renderMaps(model, points) {
+  mapGrid.innerHTML = [
+    {
+      title: "Temperature - 24h",
+      type: "temperature",
+      keyName: "t24",
+      unit: "C",
+    },
+    {
+      title: "Rainfall - 24h",
+      type: "rainfall",
+      keyName: "r24",
+      unit: "mm",
+    },
+    {
+      title: "Temperature - 48h",
+      type: "temperature",
+      keyName: "t48",
+      unit: "C",
+    },
+    {
+      title: "Rainfall - 48h",
+      type: "rainfall",
+      keyName: "r48",
+      unit: "mm",
+    },
+  ]
+    .map((config) => renderMapCard({ ...config, model, points }))
+    .join("");
 }
 
 function setStatus(message, isError = false) {
@@ -227,18 +314,16 @@ function closeProfiles() {
 }
 
 async function loadForecast() {
-  const location = locations[Number(locationSelect.value) || 0];
-  setStatus("Loading forecast...");
-  modelGrid.innerHTML = "";
+  const model = models[modelSelect.value] || models.gfs;
+  setStatus(`Loading ${model.label} maps...`);
+  mapGrid.innerHTML = "";
 
   try {
-    const modelData = await Promise.all(
-      models.map((model) => fetchModel(model, location)),
-    );
-    renderForecast(location, modelData);
-    setStatus("Forecast loaded.");
+    const points = await fetchForecast(model);
+    renderMaps(model, points);
+    setStatus(`${model.label} maps loaded.`);
   } catch (error) {
-    setStatus(error.message || "Forecast unavailable.", true);
+    setStatus(error.message || "Forecast maps unavailable.", true);
   }
 }
 
@@ -247,7 +332,7 @@ forecastForm.addEventListener("submit", (event) => {
   loadForecast();
 });
 
-locationSelect.addEventListener("change", loadForecast);
+modelSelect.addEventListener("change", loadForecast);
 
 profileOpenButtons.forEach((button) => {
   button.addEventListener("click", openProfiles);
@@ -263,5 +348,4 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-populateLocations();
 loadForecast();
