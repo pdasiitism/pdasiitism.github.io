@@ -50,6 +50,7 @@ const cityVariables = [
 const mapVariables = ["temperature_2m", "precipitation"];
 const mapGridStepDegrees = 1;
 const requestBatchSize = 60;
+const requestConcurrency = 2;
 
 const models = {
   gfs: {
@@ -324,8 +325,26 @@ async function fetchForecastBatches(model, points, variables) {
     batches.push(points.slice(index, index + requestBatchSize));
   }
 
-  const results = await Promise.all(
-    batches.map((batch) => fetchPointForecasts(model, batch, variables)),
+  const results = new Array(batches.length);
+  let nextBatch = 0;
+
+  async function worker() {
+    while (nextBatch < batches.length) {
+      const batchIndex = nextBatch;
+      nextBatch += 1;
+      results[batchIndex] = await fetchPointForecasts(
+        model,
+        batches[batchIndex],
+        variables,
+      );
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(requestConcurrency, batches.length) },
+      () => worker(),
+    ),
   );
 
   return results.flat();
