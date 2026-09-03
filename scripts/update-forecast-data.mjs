@@ -68,6 +68,7 @@ const cityVariables = [
 const gridStepDegrees = 1;
 const requestBatchSize = 50;
 const requestRetryDelayMs = 3500;
+const requestMaxAttempts = 4;
 const outputDir = new URL("../assets/data/", import.meta.url);
 const boundaryFile = new URL("../assets/maps/india-state-boundary.geojson", import.meta.url);
 
@@ -181,11 +182,29 @@ function extractValue(data, variable, hoursAhead) {
 }
 
 async function fetchBatch(model, points, variables) {
-  let response = await fetch(buildUrl(model, points, variables));
+  const url = buildUrl(model, points, variables);
+  let response;
 
-  if (response.status === 429) {
-    await wait(requestRetryDelayMs);
-    response = await fetch(buildUrl(model, points, variables));
+  for (let attempt = 1; attempt <= requestMaxAttempts; attempt += 1) {
+    response = await fetch(url);
+
+    if (response.ok) {
+      break;
+    }
+
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const shouldRetry = response.status === 429 || response.status >= 500;
+    if (!shouldRetry || attempt === requestMaxAttempts) {
+      break;
+    }
+
+    const delayMs = Number.isFinite(retryAfter)
+      ? retryAfter * 1000
+      : requestRetryDelayMs * attempt;
+    console.log(
+      `${model.label} batch request returned HTTP ${response.status}; retrying in ${Math.round(delayMs / 1000)}s`,
+    );
+    await wait(delayMs);
   }
 
   if (!response.ok) {
