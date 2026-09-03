@@ -54,14 +54,6 @@ const requestConcurrency = 1;
 const requestRetryDelayMs = 2500;
 
 const models = {
-  gfs: {
-    key: "gfs",
-    label: "GFS",
-    name: "NOAA GFS",
-    endpoint: "https://api.open-meteo.com/v1/forecast",
-    model: "gfs_global",
-    dataUrl: "assets/data/forecast-gfs.json",
-  },
   ifs: {
     key: "ifs",
     label: "IFS",
@@ -69,6 +61,14 @@ const models = {
     endpoint: "https://api.open-meteo.com/v1/forecast",
     model: "ecmwf_ifs025",
     dataUrl: "assets/data/forecast-ifs.json",
+  },
+  aifs: {
+    key: "aifs",
+    label: "AIFS",
+    name: "ECMWF AIFS",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "ecmwf_aifs025_single",
+    dataUrl: "assets/data/forecast-aifs.json",
   },
 };
 
@@ -563,7 +563,7 @@ function closeProfiles() {
 }
 
 async function loadForecast() {
-  const model = models[modelSelect.value] || models.gfs;
+  const model = models[modelSelect.value] || models.ifs;
   setStatus(`Loading ${model.label} maps...`);
   mapGrid.innerHTML = "";
   cityDetailGrid.innerHTML = "";
@@ -593,9 +593,7 @@ async function loadForecast() {
     if (cityPoints.length) {
       renderCityDetails(cityPoints);
     }
-    setStatus(
-      `${model.label}${sourceLabel} maps loaded at ${mapPoints.gridStepDegrees} degree grid.`,
-    );
+    setStatus(`${model.label}${sourceLabel} maps loaded.`);
   } catch (error) {
     setStatus(error.message || "Forecast maps unavailable.", true);
   }

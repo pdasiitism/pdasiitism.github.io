@@ -43,16 +43,16 @@ const cityLocations = [
 
 const models = [
   {
-    key: "gfs",
-    label: "GFS",
-    endpoint: "https://api.open-meteo.com/v1/forecast",
-    model: "gfs_global",
-  },
-  {
     key: "ifs",
     label: "IFS",
     endpoint: "https://api.open-meteo.com/v1/forecast",
     model: "ecmwf_ifs025",
+  },
+  {
+    key: "aifs",
+    label: "AIFS",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "ecmwf_aifs025_single",
   },
 ];
 

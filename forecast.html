@@ -23,7 +23,7 @@
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=11" />
+    <link rel="stylesheet" href="styles.css?v=12" />
   </head>
   <body>
     <main class="forecast-page">
@@ -43,16 +43,17 @@
             <h1 id="forecast-title">Forecast Maps</h1>
             <p class="forecast-kicker">Rainfall and temperature at 24h and 48h</p>
             <p class="forecast-note">
-              GFS and IFS are high-resolution global models; this browser map is
-              regridded to 1.0 degree over India to keep GitHub Pages fast and
-              avoid repeated public forecast-service rate limits.
+              ECMWF develops IFS HRES, its high-resolution deterministic forecast
+              system, and AIFS, its data-driven AI system for global weather
+              prediction. These maps compare currently available ECMWF IFS and
+              AIFS forecast data.
             </p>
           </div>
           <form class="forecast-control" id="forecast-form">
             <label for="model-select">Model</label>
             <select id="model-select" name="model">
-              <option value="gfs">GFS</option>
               <option value="ifs">IFS</option>
+              <option value="aifs">AIFS</option>
             </select>
             <button class="primary-action" type="submit">Refresh Forecast</button>
             <p id="forecast-status" role="status">Loading forecast...</p>
@@ -100,6 +101,6 @@
         </div>
       </section>
     </div>
-    <script src="forecast.js?v=12"></script>
+    <script src="forecast.js?v=13"></script>
   </body>
 </html>
