@@ -125,8 +125,26 @@ p {
 h1 {
   font-size: clamp(3.5rem, 9vw, 8.25rem);
   line-height: 0.88;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   max-width: 920px;
+}
+
+.hero-fields {
+  color: var(--brick);
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+  font-weight: 900;
+  line-height: 1.35;
+  margin-bottom: 16px;
+  max-width: 900px;
+}
+
+.hero-thesis {
+  color: #20282d;
+  font-size: clamp(1.24rem, 2vw, 1.7rem);
+  font-weight: 900;
+  line-height: 1.35;
+  margin-bottom: 18px;
+  max-width: 900px;
 }
 
 .hero-summary {
@@ -139,6 +157,11 @@ h1 {
 .hero-summary-small {
   font-size: clamp(1rem, 1.5vw, 1.18rem);
   max-width: 780px;
+}
+
+.hero-bio {
+  line-height: 1.58;
+  max-width: 900px;
 }
 
 .hero-actions,
