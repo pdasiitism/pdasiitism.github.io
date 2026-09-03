@@ -41,18 +41,31 @@ const cityLocations = [
   "Dhanbad",
 ].map((name) => samplePoints.find((point) => point.name === name));
 
-const models = [
+const ifsCandidates = [
   {
     key: "ifs",
-    label: "IFS",
+    label: "IFS HRES 9 km",
     endpoint: "https://api.open-meteo.com/v1/forecast",
-    model: "ecmwf_ifs025",
+    model: "ecmwf_ifs04",
+    gridStepDegrees: 0.1,
+    probeOnly: true,
   },
   {
+    key: "ifs",
+    label: "IFS 0.25 deg",
+    endpoint: "https://api.open-meteo.com/v1/forecast",
+    model: "ecmwf_ifs025",
+    gridStepDegrees: 0.25,
+  },
+];
+
+const fixedModels = [
+  {
     key: "aifs",
-    label: "AIFS",
+    label: "AIFS 0.25 deg",
     endpoint: "https://api.open-meteo.com/v1/forecast",
     model: "ecmwf_aifs025_single",
+    gridStepDegrees: 0.25,
   },
 ];
 
@@ -65,10 +78,10 @@ const cityVariables = [
   "cloud_cover",
   "pressure_msl",
 ];
-const gridStepDegrees = 1;
-const requestBatchSize = 50;
-const requestRetryDelayMs = 3500;
-const requestMaxAttempts = 4;
+const requestBatchSize = 100;
+const requestRetryDelayMs = 15000;
+const requestMaxAttempts = 5;
+const requestBatchDelayMs = 1500;
 const outputDir = new URL("../assets/data/", import.meta.url);
 const boundaryFile = new URL("../assets/maps/india-state-boundary.geojson", import.meta.url);
 
@@ -101,7 +114,7 @@ function pointInIndia(longitude, latitude, boundary) {
   );
 }
 
-function buildIndiaGrid(boundary) {
+function buildIndiaGrid(boundary, gridStepDegrees) {
   const [minLon, minLat, maxLon, maxLat] = boundary.bbox;
   const points = [];
 
@@ -192,7 +205,8 @@ async function fetchBatch(model, points, variables) {
       break;
     }
 
-    const retryAfter = Number(response.headers.get("retry-after"));
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : Number.NaN;
     const shouldRetry = response.status === 429 || response.status >= 500;
     if (!shouldRetry || attempt === requestMaxAttempts) {
       break;
@@ -240,7 +254,7 @@ async function fetchBatches(model, points, variables) {
   for (let index = 0; index < points.length; index += requestBatchSize) {
     const batch = points.slice(index, index + requestBatchSize);
     output.push(...(await fetchBatch(model, batch, variables)));
-    await wait(500);
+    await wait(requestBatchDelayMs);
   }
 
   return output;
@@ -252,7 +266,7 @@ async function updateModel(model, gridPoints) {
   const payload = {
     generated_at: new Date().toISOString(),
     model: model.label,
-    grid_step_degrees: gridStepDegrees,
+    grid_step_degrees: model.gridStepDegrees,
     map_points: mapPoints,
     city_points: cityPoints,
   };
@@ -265,9 +279,57 @@ async function updateModel(model, gridPoints) {
 }
 
 const boundary = JSON.parse(await readFile(boundaryFile, "utf8"));
-const gridPoints = buildIndiaGrid(boundary);
 await mkdir(outputDir, { recursive: true });
 
-for (const model of models) {
+async function modelHasValues(model) {
+  const [probe] = await fetchBatch(
+    model,
+    [{ name: "New Delhi", latitude: 28.6139, longitude: 77.209 }],
+    mapVariables,
+  );
+  return [probe.t24.value, probe.t48.value, probe.r24.value, probe.r48.value].some(
+    (value) => Number.isFinite(Number(value)),
+  );
+}
+
+async function updateIfsModel() {
+  for (const candidate of ifsCandidates) {
+    let hasValues = false;
+
+    try {
+      hasValues = await modelHasValues(candidate);
+    } catch (error) {
+      console.log(`${candidate.label} probe failed: ${error.message}`);
+    }
+
+    if (!hasValues) {
+      console.log(`${candidate.label} returned no usable values; trying fallback`);
+      continue;
+    }
+
+    if (candidate.probeOnly) {
+      console.log(
+        `${candidate.label} returned values, but India-wide 9 km map generation exceeds the public coordinate API budget; trying fallback`,
+      );
+      continue;
+    }
+
+    try {
+      const gridPoints = buildIndiaGrid(boundary, candidate.gridStepDegrees);
+      await updateModel(candidate, gridPoints);
+      return;
+    } catch (error) {
+      console.log(`${candidate.label} could not be generated: ${error.message}`);
+      console.log("Trying fallback");
+    }
+  }
+
+  throw new Error("No usable ECMWF IFS forecast source returned values");
+}
+
+await updateIfsModel();
+
+for (const model of fixedModels) {
+  const gridPoints = buildIndiaGrid(boundary, model.gridStepDegrees);
   await updateModel(model, gridPoints);
 }

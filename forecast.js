@@ -48,24 +48,24 @@ const cityVariables = [
   "pressure_msl",
 ];
 const mapVariables = ["temperature_2m", "precipitation"];
-const preferredMapGridStepDegrees = 1;
-const requestBatchSize = 50;
+const preferredMapGridStepDegrees = 0.25;
+const requestBatchSize = 100;
 const requestConcurrency = 1;
 const requestRetryDelayMs = 2500;
 
 const models = {
   ifs: {
     key: "ifs",
-    label: "IFS",
-    name: "ECMWF IFS",
+    label: "IFS / HRES",
+    name: "ECMWF IFS / HRES",
     endpoint: "https://api.open-meteo.com/v1/forecast",
     model: "ecmwf_ifs025",
     dataUrl: "assets/data/forecast-ifs.json",
   },
   aifs: {
     key: "aifs",
-    label: "AIFS",
-    name: "ECMWF AIFS",
+    label: "AIFS 0.25 deg",
+    name: "ECMWF AIFS 0.25 deg",
     endpoint: "https://api.open-meteo.com/v1/forecast",
     model: "ecmwf_aifs025_single",
     dataUrl: "assets/data/forecast-aifs.json",
@@ -578,6 +578,7 @@ async function loadForecast() {
       const cachedForecast = await fetchCachedForecast(model);
       mapPoints = cachedForecast.map_points;
       cityPoints = cachedForecast.city_points;
+      model.label = cachedForecast.model || model.label;
       sourceLabel = " cached";
     } catch {
       mapPoints = await fetchMapForecasts(model);
