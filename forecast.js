@@ -170,13 +170,16 @@ function formatRunTime(time) {
 
 function renderLegend(variableKey, variableData) {
   const variable = variables[variableKey];
-  const unit = variableData.unit ? ` ${variableData.unit}` : "";
+  const ticks = (variableData.legend || []).map((tick) =>
+    String(tick).replace(/\s*C$/, ""),
+  );
 
   return `
     <div class="forecast-colorbar" aria-label="${variable.label} color scale">
+      <strong>${variableData.unit || ""}</strong>
       <i style="background:${variable.gradient}"></i>
       <div>
-        ${(variableData.legend || []).map((tick) => `<span>${tick}${unit && !tick.includes("C") ? "" : ""}</span>`).join("")}
+        ${ticks.map((tick) => `<span>${tick}</span>`).join("")}
       </div>
     </div>
   `;

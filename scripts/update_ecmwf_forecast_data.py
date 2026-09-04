@@ -61,8 +61,8 @@ ANIMATION_VARIABLES = {
     "temperature": {
         "field": "temperature_2m",
         "steps": FORECAST_STEPS,
-        "unit": "C",
-        "legend": ["-10 C", "0 C", "16 C", "32 C", "44 C"],
+        "unit": "°C",
+        "legend": ["-10", "0", "16", "32", "44"],
         "stops": [
             (-12, (76, 57, 156)),
             (0, (126, 87, 194)),
@@ -78,7 +78,7 @@ ANIMATION_VARIABLES = {
     "rainfall": {
         "field": "precipitation",
         "steps": RAIN_STEPS,
-        "unit": "mm / 6h",
+        "unit": "mm / 6 h",
         "legend": ["0", "5", "15", "30", "60+"],
         "stops": [
             (0, (247, 251, 255)),
