@@ -70,7 +70,8 @@ const cityVariables = [
 const requestBatchSize = 100;
 const requestRetryDelayMs = 15000;
 const requestMaxAttempts = 5;
-const requestBatchDelayMs = 1500;
+const requestBatchDelayMs = 5000;
+const mapRequestBandDegrees = 2;
 const outputDir = new URL("../assets/data/", import.meta.url);
 const boundaryFile = new URL("../assets/maps/india-state-boundary.geojson", import.meta.url);
 
@@ -103,37 +104,25 @@ function pointInIndia(longitude, latitude, boundary) {
   );
 }
 
-function buildIndiaGrid(boundary, gridStepDegrees) {
-  const [minLon, minLat, maxLon, maxLat] = boundary.bbox;
-  const points = [];
-
-  for (
-    let latitude = Math.floor(minLat);
-    latitude <= Math.ceil(maxLat);
-    latitude += gridStepDegrees
-  ) {
-    for (
-      let longitude = Math.floor(minLon);
-      longitude <= Math.ceil(maxLon);
-      longitude += gridStepDegrees
-    ) {
-      if (pointInIndia(longitude, latitude, boundary)) {
-        points.push({
-          name: `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`,
-          latitude,
-          longitude,
-        });
-      }
-    }
-  }
-
-  return points;
-}
-
 function buildUrl(model, points, variables) {
   const params = new URLSearchParams({
     latitude: points.map((point) => point.latitude).join(","),
     longitude: points.map((point) => point.longitude).join(","),
+    hourly: variables.join(","),
+    models: model.model,
+    timezone: "Asia/Kolkata",
+    forecast_hours: "49",
+    wind_speed_unit: "kmh",
+    precipitation_unit: "mm",
+    temperature_unit: "celsius",
+  });
+
+  return `${model.endpoint}?${params.toString()}`;
+}
+
+function buildBoundingBoxUrl(model, boundingBox, variables) {
+  const params = new URLSearchParams({
+    bounding_box: boundingBox.join(","),
     hourly: variables.join(","),
     models: model.model,
     timezone: "Asia/Kolkata",
@@ -215,6 +204,10 @@ async function fetchBatch(model, points, variables) {
   }
 
   const payload = await response.json();
+  if (payload.error) {
+    throw new Error(`${model.label} request failed: ${payload.reason}`);
+  }
+
   const locations = Array.isArray(payload) ? payload : [payload];
 
   return points.map((point, index) => {
@@ -237,6 +230,55 @@ async function fetchBatch(model, points, variables) {
   });
 }
 
+async function fetchBoundingBox(model, boundingBox, variables) {
+  const url = buildBoundingBoxUrl(model, boundingBox, variables);
+  let response;
+
+  for (let attempt = 1; attempt <= requestMaxAttempts; attempt += 1) {
+    response = await fetch(url);
+
+    if (response.ok) {
+      break;
+    }
+
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : Number.NaN;
+    const shouldRetry = response.status === 429 || response.status >= 500;
+    if (!shouldRetry || attempt === requestMaxAttempts) {
+      break;
+    }
+
+    const delayMs = Number.isFinite(retryAfter)
+      ? retryAfter * 1000
+      : requestRetryDelayMs * attempt;
+    console.log(
+      `${model.label} map band returned HTTP ${response.status}; retrying in ${Math.round(delayMs / 1000)}s`,
+    );
+    await wait(delayMs);
+  }
+
+  if (!response.ok) {
+    throw new Error(`${model.label} map band failed with HTTP ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (payload.error) {
+    throw new Error(`${model.label} map band failed: ${payload.reason}`);
+  }
+
+  const locations = Array.isArray(payload) ? payload : [payload];
+
+  return locations.map((data) => ({
+    name: `${Number(data.latitude).toFixed(2)}, ${Number(data.longitude).toFixed(2)}`,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    t24: extractValue(data, "temperature_2m", 24),
+    t48: extractValue(data, "temperature_2m", 48),
+    r24: extractValue(data, "precipitation", 24),
+    r48: extractValue(data, "precipitation", 48),
+  }));
+}
+
 async function fetchBatches(model, points, variables) {
   const output = [];
 
@@ -249,8 +291,46 @@ async function fetchBatches(model, points, variables) {
   return output;
 }
 
-async function updateModel(model, gridPoints) {
-  const mapPoints = await fetchBatches(model, gridPoints, mapVariables);
+async function fetchMapPoints(model, boundary) {
+  const [minLon, minLat, maxLon, maxLat] = boundary.bbox;
+  const output = [];
+  const seen = new Set();
+
+  for (
+    let latitude = Math.floor(minLat);
+    latitude < Math.ceil(maxLat);
+    latitude += mapRequestBandDegrees
+  ) {
+    const boundingBox = [
+      latitude,
+      Math.floor(minLon),
+      Math.min(latitude + mapRequestBandDegrees, Math.ceil(maxLat)),
+      Math.ceil(maxLon),
+    ];
+    const points = await fetchBoundingBox(model, boundingBox, mapVariables);
+
+    points.forEach((point) => {
+      if (!pointInIndia(point.longitude, point.latitude, boundary)) {
+        return;
+      }
+
+      const key = `${point.latitude},${point.longitude}`;
+      if (seen.has(key)) {
+        return;
+      }
+
+      seen.add(key);
+      output.push(point);
+    });
+
+    await wait(requestBatchDelayMs);
+  }
+
+  return output;
+}
+
+async function updateModel(model) {
+  const mapPoints = await fetchMapPoints(model, boundary);
   const cityPoints = await fetchBatches(model, cityLocations, cityVariables);
   const payload = {
     generated_at: new Date().toISOString(),
@@ -271,9 +351,8 @@ const boundary = JSON.parse(await readFile(boundaryFile, "utf8"));
 await mkdir(outputDir, { recursive: true });
 
 for (const model of models) {
-  const gridPoints = buildIndiaGrid(boundary, model.gridStepDegrees);
   try {
-    await updateModel(model, gridPoints);
+    await updateModel(model);
   } catch (error) {
     console.log(`${model.label} update skipped: ${error.message}`);
   }
