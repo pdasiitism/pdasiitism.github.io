@@ -39,35 +39,19 @@ const cityLocations = [
   "Dhanbad",
 ].map((name) => samplePoints.find((point) => point.name === name));
 
-const cityVariables = [
-  "temperature_2m",
-  "precipitation",
-  "wind_speed_10m",
-  "wind_gusts_10m",
-  "cloud_cover",
-  "pressure_msl",
-];
-const mapVariables = ["temperature_2m", "precipitation"];
 const preferredMapGridStepDegrees = 0.25;
-const requestBatchSize = 100;
-const requestConcurrency = 1;
-const requestRetryDelayMs = 2500;
 
 const models = {
   ifs: {
     key: "ifs",
     label: "IFS 0.25 deg",
     name: "ECMWF IFS 0.25 deg",
-    endpoint: "https://api.open-meteo.com/v1/forecast",
-    model: "ecmwf_ifs025",
     dataUrl: "assets/data/forecast-ifs.json",
   },
   aifs: {
     key: "aifs",
     label: "AIFS 0.25 deg",
     name: "ECMWF AIFS 0.25 deg",
-    endpoint: "https://api.open-meteo.com/v1/forecast",
-    model: "ecmwf_aifs025_single",
     dataUrl: "assets/data/forecast-aifs.json",
   },
 };
@@ -83,7 +67,6 @@ const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
 let indiaBoundary = null;
 let currentMapPoints = [];
-const indiaGridPointsByStep = new Map();
 
 function populateCities() {
   citySelect.innerHTML = cityLocations
@@ -170,53 +153,6 @@ function pointInIndia(longitude, latitude) {
   );
 }
 
-function buildIndiaGrid(gridStepDegrees) {
-  if (indiaGridPointsByStep.has(gridStepDegrees)) {
-    return indiaGridPointsByStep.get(gridStepDegrees);
-  }
-
-  const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
-  const points = [];
-
-  for (
-    let latitude = Math.floor(minLat);
-    latitude <= Math.ceil(maxLat);
-    latitude += gridStepDegrees
-  ) {
-    for (
-      let longitude = Math.floor(minLon);
-      longitude <= Math.ceil(maxLon);
-      longitude += gridStepDegrees
-    ) {
-      if (pointInIndia(longitude, latitude)) {
-        points.push({
-          name: `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`,
-          latitude,
-          longitude,
-        });
-      }
-    }
-  }
-
-  indiaGridPointsByStep.set(gridStepDegrees, points);
-  return points;
-}
-
-function nearestIndex(times, targetDate) {
-  let bestIndex = 0;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  times.forEach((time, index) => {
-    const distance = Math.abs(new Date(time).getTime() - targetDate.getTime());
-    if (distance < bestDistance) {
-      bestIndex = index;
-      bestDistance = distance;
-    }
-  });
-
-  return bestIndex;
-}
-
 function temperatureColor(value) {
   if (value < 0) return "#7e57c2";
   if (value < 8) return "#3f51b5";
@@ -276,113 +212,6 @@ function gridCells(type, keyName, points, gridStepDegrees) {
   });
 
   return cells.join("");
-}
-
-function buildUrl(model, points, variables) {
-  const params = new URLSearchParams({
-    latitude: points.map((point) => point.latitude).join(","),
-    longitude: points.map((point) => point.longitude).join(","),
-    hourly: variables.join(","),
-    models: model.model,
-    timezone: "Asia/Kolkata",
-    forecast_hours: "49",
-    wind_speed_unit: "kmh",
-    precipitation_unit: "mm",
-    temperature_unit: "celsius",
-  });
-
-  return `${model.endpoint}?${params.toString()}`;
-}
-
-function wait(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function extractValue(data, variable, hoursAhead) {
-  if (!data?.hourly?.time || !data.hourly[variable]) {
-    return {
-      time: null,
-      value: null,
-    };
-  }
-
-  const target = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
-  const index = nearestIndex(data.hourly.time, target);
-  return {
-    time: data.hourly.time[index],
-    value: data.hourly[variable][index],
-  };
-}
-
-async function fetchPointForecasts(model, points, variables) {
-  let response = await fetch(buildUrl(model, points, variables));
-
-  if (response.status === 429) {
-    await wait(requestRetryDelayMs);
-    response = await fetch(buildUrl(model, points, variables));
-  }
-
-  if (!response.ok) {
-    const error = new Error(`${model.label} forecast unavailable`);
-    error.status = response.status;
-    throw error;
-  }
-
-  const payload = await response.json();
-  const locations = Array.isArray(payload) ? payload : [payload];
-
-  return points.map((point, index) => {
-    const data = locations[index];
-    return {
-      ...point,
-      t24: extractValue(data, "temperature_2m", 24),
-      t48: extractValue(data, "temperature_2m", 48),
-      r24: extractValue(data, "precipitation", 24),
-      r48: extractValue(data, "precipitation", 48),
-      w24: extractValue(data, "wind_speed_10m", 24),
-      w48: extractValue(data, "wind_speed_10m", 48),
-      g24: extractValue(data, "wind_gusts_10m", 24),
-      g48: extractValue(data, "wind_gusts_10m", 48),
-      c24: extractValue(data, "cloud_cover", 24),
-      c48: extractValue(data, "cloud_cover", 48),
-      p24: extractValue(data, "pressure_msl", 24),
-      p48: extractValue(data, "pressure_msl", 48),
-    };
-  });
-}
-
-async function fetchForecastBatches(model, points, variables) {
-  const batches = [];
-
-  for (let index = 0; index < points.length; index += requestBatchSize) {
-    batches.push(points.slice(index, index + requestBatchSize));
-  }
-
-  const results = new Array(batches.length);
-  let nextBatch = 0;
-
-  async function worker() {
-    while (nextBatch < batches.length) {
-      const batchIndex = nextBatch;
-      nextBatch += 1;
-      results[batchIndex] = await fetchPointForecasts(
-        model,
-        batches[batchIndex],
-        variables,
-      );
-    }
-  }
-
-  await Promise.all(
-    Array.from(
-      { length: Math.min(requestConcurrency, batches.length) },
-      () => worker(),
-    ),
-  );
-
-  return results.flat();
 }
 
 async function fetchBoundary() {
@@ -493,13 +322,6 @@ function renderMaps(model, points) {
     .join("");
 }
 
-async function fetchMapForecasts(model) {
-  const gridPoints = buildIndiaGrid(preferredMapGridStepDegrees);
-  const points = await fetchForecastBatches(model, gridPoints, mapVariables);
-  points.gridStepDegrees = preferredMapGridStepDegrees;
-  return points;
-}
-
 async function fetchCachedForecast(model) {
   const response = await fetch(`${model.dataUrl}?v=${Date.now()}`);
   if (!response.ok) {
@@ -570,31 +392,17 @@ async function loadForecast() {
 
   try {
     await fetchBoundary();
-    let mapPoints;
-    let cityPoints;
-    let sourceLabel = "";
-
-    try {
-      const cachedForecast = await fetchCachedForecast(model);
-      mapPoints = cachedForecast.map_points;
-      cityPoints = cachedForecast.city_points;
-      model.label = cachedForecast.model || model.label;
-      sourceLabel = " cached";
-    } catch {
-      mapPoints = await fetchMapForecasts(model);
-      cityPoints = await fetchForecastBatches(
-        model,
-        cityLocations,
-        cityVariables,
-      ).catch(() => []);
-    }
+    const cachedForecast = await fetchCachedForecast(model);
+    const mapPoints = cachedForecast.map_points;
+    const cityPoints = cachedForecast.city_points;
+    model.label = cachedForecast.model || model.label;
 
     currentMapPoints = cityPoints;
     renderMaps(model, mapPoints);
     if (cityPoints.length) {
       renderCityDetails(cityPoints);
     }
-    setStatus(`${model.label}${sourceLabel} maps loaded.`);
+    setStatus(`${model.label} maps loaded.`);
   } catch (error) {
     setStatus(error.message || "Forecast maps unavailable.", true);
   }
