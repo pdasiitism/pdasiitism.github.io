@@ -3,7 +3,7 @@ name: Update forecast data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "20 */6 * * *"
+        - cron: "30 2,8,14,20 * * *"
 
 permissions:
   contents: write
