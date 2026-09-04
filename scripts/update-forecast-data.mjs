@@ -70,8 +70,8 @@ const cityVariables = [
 const requestBatchSize = 100;
 const requestRetryDelayMs = 15000;
 const requestMaxAttempts = 5;
-const requestBatchDelayMs = 5000;
-const mapRequestBandDegrees = 2;
+const requestBatchDelayMs = 8000;
+const mapRequestBandDegrees = 0.5;
 const outputDir = new URL("../assets/data/", import.meta.url);
 const boundaryFile = new URL("../assets/maps/india-state-boundary.geojson", import.meta.url);
 
