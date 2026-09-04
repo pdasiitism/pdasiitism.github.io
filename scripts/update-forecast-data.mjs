@@ -141,6 +141,21 @@ function wait(ms) {
   });
 }
 
+function retryDelayMs(response, attempt) {
+  const retryAfterHeader = response.headers.get("retry-after");
+  const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : Number.NaN;
+  return Number.isFinite(retryAfter)
+    ? retryAfter * 1000
+    : requestRetryDelayMs * attempt;
+}
+
+function isRetryablePayload(payload) {
+  return (
+    payload?.error === true &&
+    /limit|try again|temporarily|timeout|too many/i.test(payload.reason || "")
+  );
+}
+
 function nearestIndex(times, targetDate) {
   let bestIndex = 0;
   let bestDistance = Number.POSITIVE_INFINITY;
@@ -175,24 +190,31 @@ function extractValue(data, variable, hoursAhead) {
 async function fetchBatch(model, points, variables) {
   const url = buildUrl(model, points, variables);
   let response;
+  let payload;
 
   for (let attempt = 1; attempt <= requestMaxAttempts; attempt += 1) {
     response = await fetch(url);
 
     if (response.ok) {
-      break;
+      payload = await response.json();
+      if (!isRetryablePayload(payload) || attempt === requestMaxAttempts) {
+        break;
+      }
+
+      const delayMs = requestRetryDelayMs * attempt;
+      console.log(
+        `${model.label} batch request returned ${payload.reason}; retrying in ${Math.round(delayMs / 1000)}s`,
+      );
+      await wait(delayMs);
+      continue;
     }
 
-    const retryAfterHeader = response.headers.get("retry-after");
-    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : Number.NaN;
     const shouldRetry = response.status === 429 || response.status >= 500;
     if (!shouldRetry || attempt === requestMaxAttempts) {
       break;
     }
 
-    const delayMs = Number.isFinite(retryAfter)
-      ? retryAfter * 1000
-      : requestRetryDelayMs * attempt;
+    const delayMs = retryDelayMs(response, attempt);
     console.log(
       `${model.label} batch request returned HTTP ${response.status}; retrying in ${Math.round(delayMs / 1000)}s`,
     );
@@ -203,7 +225,6 @@ async function fetchBatch(model, points, variables) {
     throw new Error(`${model.label} request failed with HTTP ${response.status}`);
   }
 
-  const payload = await response.json();
   if (payload.error) {
     throw new Error(`${model.label} request failed: ${payload.reason}`);
   }
@@ -233,24 +254,31 @@ async function fetchBatch(model, points, variables) {
 async function fetchBoundingBox(model, boundingBox, variables) {
   const url = buildBoundingBoxUrl(model, boundingBox, variables);
   let response;
+  let payload;
 
   for (let attempt = 1; attempt <= requestMaxAttempts; attempt += 1) {
     response = await fetch(url);
 
     if (response.ok) {
-      break;
+      payload = await response.json();
+      if (!isRetryablePayload(payload) || attempt === requestMaxAttempts) {
+        break;
+      }
+
+      const delayMs = requestRetryDelayMs * attempt;
+      console.log(
+        `${model.label} map band returned ${payload.reason}; retrying in ${Math.round(delayMs / 1000)}s`,
+      );
+      await wait(delayMs);
+      continue;
     }
 
-    const retryAfterHeader = response.headers.get("retry-after");
-    const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : Number.NaN;
     const shouldRetry = response.status === 429 || response.status >= 500;
     if (!shouldRetry || attempt === requestMaxAttempts) {
       break;
     }
 
-    const delayMs = Number.isFinite(retryAfter)
-      ? retryAfter * 1000
-      : requestRetryDelayMs * attempt;
+    const delayMs = retryDelayMs(response, attempt);
     console.log(
       `${model.label} map band returned HTTP ${response.status}; retrying in ${Math.round(delayMs / 1000)}s`,
     );
@@ -261,7 +289,6 @@ async function fetchBoundingBox(model, boundingBox, variables) {
     throw new Error(`${model.label} map band failed with HTTP ${response.status}`);
   }
 
-  const payload = await response.json();
   if (payload.error) {
     throw new Error(`${model.label} map band failed: ${payload.reason}`);
   }
