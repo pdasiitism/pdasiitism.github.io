@@ -40,12 +40,13 @@
         <div class="forecast-hero-grid">
           <div>
             <p class="eyebrow">India Forecast</p>
-            <h1 id="forecast-title">Forecast Maps</h1>
-            <p class="forecast-kicker">Rainfall and temperature at 24h and 48h</p>
+            <h1 id="forecast-title">Forecast Animation</h1>
+            <p class="forecast-kicker">Five-day rainfall and temperature animation</p>
             <p class="forecast-note">
               ECMWF develops IFS, its physics-based global forecast system, and
               AIFS, its data-driven AI forecast system. These India maps are
-              generated from ECMWF Open Data 0.25 degree fields.
+              generated from ECMWF Open Data 0.25 degree fields and smoothed for
+              display using bilinear interpolation.
             </p>
           </div>
           <form class="forecast-control" id="forecast-form">
@@ -54,14 +55,39 @@
               <option value="ifs">IFS</option>
               <option value="aifs">AIFS</option>
             </select>
-            <button class="primary-action" type="submit">Refresh Forecast</button>
+            <label for="variable-select">Variable</label>
+            <select id="variable-select" name="variable">
+              <option value="temperature">Temperature</option>
+              <option value="rainfall">Rainfall</option>
+            </select>
             <p id="forecast-status" role="status">Loading forecast...</p>
           </form>
         </div>
       </section>
 
-      <section class="forecast-board" aria-label="India forecast maps">
-        <div class="forecast-map-grid" id="forecast-map-grid"></div>
+      <section class="forecast-board" aria-label="India forecast animation">
+        <article class="forecast-animation-card">
+          <header>
+            <div>
+              <span id="animation-model-label">IFS 0.25 deg</span>
+              <h2 id="animation-title">Temperature Animation</h2>
+            </div>
+            <p id="animation-valid-time">Valid time loading...</p>
+          </header>
+          <div class="forecast-animation-map" id="forecast-animation-map"></div>
+          <footer>
+            <div class="animation-buttons" aria-label="Animation controls">
+              <button type="button" id="prev-frame" aria-label="Previous frame">&#8249;</button>
+              <button type="button" id="play-toggle">Pause</button>
+              <button type="button" id="next-frame" aria-label="Next frame">&#8250;</button>
+            </div>
+            <label class="forecast-timeline" for="frame-slider">
+              <span id="frame-step-label">Frame 1</span>
+              <input id="frame-slider" type="range" min="0" max="0" value="0" step="1" />
+            </label>
+            <div id="animation-legend"></div>
+          </footer>
+        </article>
       </section>
 
       <section class="forecast-board city-forecast-section" aria-labelledby="city-forecast-title">
@@ -100,6 +126,6 @@
         </div>
       </section>
     </div>
-    <script src="forecast.js?v=15"></script>
+    <script src="forecast.js?v=16"></script>
   </body>
 </html>

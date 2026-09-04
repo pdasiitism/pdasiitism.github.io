@@ -39,34 +39,61 @@ const cityLocations = [
   "Dhanbad",
 ].map((name) => samplePoints.find((point) => point.name === name));
 
-const preferredMapGridStepDegrees = 0.25;
-
 const models = {
   ifs: {
     key: "ifs",
     label: "IFS 0.25 deg",
-    name: "ECMWF IFS 0.25 deg",
     dataUrl: "assets/data/forecast-ifs.json",
+    animationUrl: "assets/data/forecast-ifs-animation.json",
   },
   aifs: {
     key: "aifs",
     label: "AIFS 0.25 deg",
-    name: "ECMWF AIFS 0.25 deg",
     dataUrl: "assets/data/forecast-aifs.json",
+    animationUrl: "assets/data/forecast-aifs-animation.json",
+  },
+};
+
+const variables = {
+  temperature: {
+    label: "Temperature",
+    gradient:
+      "linear-gradient(90deg,#4c399c,#7e57c2,#3f51b5,#2196f3,#26a69a,#fdd835,#fb8c00,#e53935,#8e0000)",
+  },
+  rainfall: {
+    label: "Rainfall",
+    gradient:
+      "linear-gradient(90deg,#f7fbff,#c7e9b4,#41b6c4,#2c7fb8,#fdae61,#d7191c,#6a1b9a)",
   },
 };
 
 const modelSelect = document.querySelector("#model-select");
-const citySelect = document.querySelector("#city-select");
+const variableSelect = document.querySelector("#variable-select");
 const forecastForm = document.querySelector("#forecast-form");
 const statusEl = document.querySelector("#forecast-status");
-const mapGrid = document.querySelector("#forecast-map-grid");
+const animationMap = document.querySelector("#forecast-animation-map");
+const animationModelLabel = document.querySelector("#animation-model-label");
+const animationTitle = document.querySelector("#animation-title");
+const animationValidTime = document.querySelector("#animation-valid-time");
+const animationLegend = document.querySelector("#animation-legend");
+const frameSlider = document.querySelector("#frame-slider");
+const frameStepLabel = document.querySelector("#frame-step-label");
+const playToggle = document.querySelector("#play-toggle");
+const prevFrameButton = document.querySelector("#prev-frame");
+const nextFrameButton = document.querySelector("#next-frame");
+const citySelect = document.querySelector("#city-select");
 const cityDetailGrid = document.querySelector("#city-detail-grid");
 const profileModal = document.querySelector("#profile-modal");
 const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")];
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
+
 let indiaBoundary = null;
-let currentMapPoints = [];
+let activeForecast = null;
+let activeAnimation = null;
+let activeFrames = [];
+let currentFrameIndex = 0;
+let animationTimer = null;
+let isPlaying = true;
 
 function populateCities() {
   citySelect.innerHTML = cityLocations
@@ -115,133 +142,7 @@ function boundaryPaths() {
     .join("");
 }
 
-function pointPosition(point) {
-  const [x, y] = projectPoint([point.longitude, point.latitude]);
-  return { x, y };
-}
-
-function pointInRing(longitude, latitude, ring) {
-  let inside = false;
-
-  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
-    const [currentLon, currentLat] = ring[index];
-    const [previousLon, previousLat] = ring[previous];
-    const intersects =
-      currentLat > latitude !== previousLat > latitude &&
-      longitude <
-        ((previousLon - currentLon) * (latitude - currentLat)) /
-          (previousLat - currentLat) +
-          currentLon;
-
-    if (intersects) {
-      inside = !inside;
-    }
-  }
-
-  return inside;
-}
-
-function pointInFeature(longitude, latitude, feature) {
-  return feature.geometry.coordinates.some((ring) =>
-    pointInRing(longitude, latitude, ring),
-  );
-}
-
-function pointInIndia(longitude, latitude) {
-  return indiaBoundary.features.some((feature) =>
-    pointInFeature(longitude, latitude, feature),
-  );
-}
-
-function temperatureColor(value) {
-  if (value < 0) return "#7e57c2";
-  if (value < 8) return "#3f51b5";
-  if (value < 16) return "#2196f3";
-  if (value < 24) return "#26a69a";
-  if (value < 32) return "#fdd835";
-  if (value < 38) return "#fb8c00";
-  if (value < 44) return "#e53935";
-  return "#8e0000";
-}
-
-function rainfallColor(value) {
-  if (value <= 0) return "#f7fbff";
-  if (value < 1) return "#c7e9b4";
-  if (value < 5) return "#41b6c4";
-  if (value < 15) return "#2c7fb8";
-  if (value < 30) return "#fdae61";
-  if (value < 60) return "#d7191c";
-  return "#6a1b9a";
-}
-
-function legendStops(type) {
-  if (type === "temperature") {
-    return {
-      gradient:
-        "linear-gradient(90deg,#7e57c2,#3f51b5,#2196f3,#26a69a,#fdd835,#fb8c00,#e53935,#8e0000)",
-      ticks: ["0 C", "16 C", "32 C", "44 C"],
-    };
-  }
-
-  return {
-    gradient:
-      "linear-gradient(90deg,#f7fbff,#c7e9b4,#41b6c4,#2c7fb8,#fdae61,#d7191c,#6a1b9a)",
-    ticks: ["0 mm", "5 mm", "30 mm", "60+ mm"],
-  };
-}
-
-function gridCells(type, keyName, points, gridStepDegrees) {
-  const [minLon, minLat, maxLon, maxLat] = indiaBoundary.bbox;
-  const cellWidth = (gridStepDegrees / (maxLon - minLon)) * 1000 + 1;
-  const cellHeight = (gridStepDegrees / (maxLat - minLat)) * 1030 + 1;
-  const cells = [];
-
-  points.forEach((point) => {
-    const value = Number(point[keyName].value);
-    if (!Number.isFinite(value)) {
-      return;
-    }
-
-    const { x, y } = pointPosition(point);
-    const color =
-      type === "temperature" ? temperatureColor(value) : rainfallColor(value);
-    const opacity = type === "temperature" ? 0.86 : value <= 0 ? 0.5 : 0.86;
-    cells.push(
-      `<rect x="${(x - cellWidth / 2).toFixed(2)}" y="${(y - cellHeight / 2).toFixed(2)}" width="${cellWidth.toFixed(2)}" height="${cellHeight.toFixed(2)}" fill="${color}" opacity="${opacity}"></rect>`,
-    );
-  });
-
-  return cells.join("");
-}
-
-async function fetchBoundary() {
-  if (indiaBoundary) {
-    return indiaBoundary;
-  }
-
-  const response = await fetch("assets/maps/india-state-boundary.geojson?v=1");
-  if (!response.ok) {
-    throw new Error("India map boundary unavailable");
-  }
-
-  indiaBoundary = await response.json();
-  return indiaBoundary;
-}
-
-function valueRange(points, key) {
-  const values = points
-    .map((point) => point[key].value)
-    .filter((value) => Number.isFinite(Number(value)))
-    .map(Number);
-
-  return {
-    min: Math.min(...values),
-    max: Math.max(...values),
-  };
-}
-
-function formatLeadTime(points, key) {
-  const time = points.find((point) => point[key].time)?.[key].time;
+function formatTime(time) {
   if (!time) {
     return "";
   }
@@ -258,80 +159,113 @@ function formatLeadTime(points, key) {
   });
 }
 
-function renderLegend(type) {
-  const stops = legendStops(type);
+function formatRunTime(time) {
+  if (!time) {
+    return "";
+  }
+
+  const normalized = time.replace(/T(\d{2})(\d{2})Z$/, "T$1:$2:00Z");
+  return formatTime(normalized);
+}
+
+function renderLegend(variableKey, variableData) {
+  const variable = variables[variableKey];
+  const unit = variableData.unit ? ` ${variableData.unit}` : "";
 
   return `
-    <div class="forecast-colorbar" aria-label="${type} color scale">
-      <i style="background:${stops.gradient}"></i>
+    <div class="forecast-colorbar" aria-label="${variable.label} color scale">
+      <i style="background:${variable.gradient}"></i>
       <div>
-        ${stops.ticks.map((tick) => `<span>${tick}</span>`).join("")}
+        ${(variableData.legend || []).map((tick) => `<span>${tick}${unit && !tick.includes("C") ? "" : ""}</span>`).join("")}
       </div>
     </div>
   `;
 }
 
-function renderMapCard({ title, type, keyName, unit, model, points }) {
-  const range = valueRange(points, keyName);
-  const clipId = `india-clip-${type}-${keyName}`;
+function setStatus(message, isError = false) {
+  statusEl.textContent = message;
+  statusEl.classList.toggle("error", isError);
+}
 
-  return `
-    <article class="india-map-card">
-      <header>
-        <div>
-          <span>${model.label}</span>
-          <h2>${title}</h2>
-        </div>
-        <p>Valid: ${formatLeadTime(points, keyName)}</p>
-      </header>
-      <svg class="india-map" viewBox="0 0 1000 1030" role="img" aria-label="${title} forecast map for India">
-        <defs>
-          <clipPath id="${clipId}">
-            ${boundaryPaths()}
-          </clipPath>
-        </defs>
-        <g class="forecast-field" clip-path="url(#${clipId})">
-          ${gridCells(type, keyName, points, points.gridStepDegrees)}
-        </g>
-        <g class="india-map-shape">
+async function fetchJson(url) {
+  const response = await fetch(`${url}?v=${Date.now()}`);
+  if (!response.ok) {
+    throw new Error("Forecast data unavailable");
+  }
+
+  return response.json();
+}
+
+async function fetchBoundary() {
+  if (indiaBoundary) {
+    return indiaBoundary;
+  }
+
+  indiaBoundary = await fetchJson("assets/maps/india-state-boundary.geojson");
+  return indiaBoundary;
+}
+
+function renderFrame() {
+  const model = models[modelSelect.value] || models.ifs;
+  const variableKey = variableSelect.value;
+  const variable = variables[variableKey];
+  const variableData = activeAnimation.variables[variableKey];
+  const frame = activeFrames[currentFrameIndex];
+  const clipId = `india-animation-clip-${model.key}`;
+
+  animationModelLabel.textContent = activeAnimation.model || model.label;
+  animationTitle.textContent = `${variable.label} Animation`;
+  animationValidTime.textContent = `Valid: ${formatTime(frame.valid_time)}`;
+  frameStepLabel.textContent = `+${frame.step} h`;
+  frameSlider.max = String(activeFrames.length - 1);
+  frameSlider.value = String(currentFrameIndex);
+  animationLegend.innerHTML = renderLegend(variableKey, variableData);
+
+  animationMap.innerHTML = `
+    <svg class="india-map animation-india-map" viewBox="0 0 1000 1030" role="img" aria-label="${variable.label} forecast animation for India">
+      <defs>
+        <clipPath id="${clipId}">
           ${boundaryPaths()}
-        </g>
-        <g class="map-labels" aria-hidden="true">
-          <text x="455" y="150">North</text>
-          <text x="135" y="485">West</text>
-          <text x="740" y="465">East</text>
-          <text x="485" y="885">South</text>
-        </g>
-      </svg>
-      <footer>
-        <span>${formatNumber(range.min)} to ${formatNumber(range.max)} ${unit}</span>
-        ${renderLegend(type)}
-      </footer>
-    </article>
+        </clipPath>
+      </defs>
+      <image href="${frame.image}?v=${activeAnimation.generated_at}" x="0" y="0" width="1000" height="1030" preserveAspectRatio="none" clip-path="url(#${clipId})"></image>
+      <g class="india-map-shape">
+        ${boundaryPaths()}
+      </g>
+    </svg>
   `;
 }
 
-function renderMaps(model, points) {
-  mapGrid.innerHTML = [
-    { title: "Temperature - 24h", type: "temperature", keyName: "t24", unit: "C" },
-    { title: "Rainfall - 24h", type: "rainfall", keyName: "r24", unit: "mm" },
-    { title: "Temperature - 48h", type: "temperature", keyName: "t48", unit: "C" },
-    { title: "Rainfall - 48h", type: "rainfall", keyName: "r48", unit: "mm" },
-  ]
-    .map((config) => renderMapCard({ ...config, model, points }))
-    .join("");
-}
-
-async function fetchCachedForecast(model) {
-  const response = await fetch(`${model.dataUrl}?v=${Date.now()}`);
-  if (!response.ok) {
-    throw new Error("Cached forecast unavailable");
+function setFrame(index) {
+  if (!activeFrames.length) {
+    return;
   }
 
-  const forecast = await response.json();
-  forecast.map_points.gridStepDegrees =
-    forecast.grid_step_degrees || preferredMapGridStepDegrees;
-  return forecast;
+  currentFrameIndex = (index + activeFrames.length) % activeFrames.length;
+  renderFrame();
+}
+
+function stopAnimation() {
+  if (animationTimer) {
+    window.clearInterval(animationTimer);
+    animationTimer = null;
+  }
+}
+
+function startAnimation() {
+  stopAnimation();
+  animationTimer = window.setInterval(() => {
+    setFrame(currentFrameIndex + 1);
+  }, 850);
+}
+
+function updatePlayback() {
+  playToggle.textContent = isPlaying ? "Pause" : "Play";
+  if (isPlaying) {
+    startAnimation();
+  } else {
+    stopAnimation();
+  }
 }
 
 function renderCityDetails(points) {
@@ -345,7 +279,7 @@ function renderCityDetails(points) {
   cityDetailGrid.innerHTML = [24, 48]
     .map((lead) => {
       const suffix = lead === 24 ? "24" : "48";
-      const time = formatLeadTime([point], `t${suffix}`);
+      const time = formatTime(point[`t${suffix}`].time);
       return `
         <article class="city-detail-card">
           <header>
@@ -357,8 +291,6 @@ function renderCityDetails(points) {
             <div><dt>Temperature</dt><dd>${formatNumber(point[`t${suffix}`].value)} C</dd></div>
             <div><dt>Rainfall</dt><dd>${formatNumber(point[`r${suffix}`].value)} mm</dd></div>
             <div><dt>Wind speed</dt><dd>${formatNumber(point[`w${suffix}`].value)} km/h</dd></div>
-            <div><dt>Wind gust</dt><dd>${formatNumber(point[`g${suffix}`].value)} km/h</dd></div>
-            <div><dt>Cloud cover</dt><dd>${formatNumber(point[`c${suffix}`].value, 0)}%</dd></div>
             <div><dt>MSL pressure</dt><dd>${formatNumber(point[`p${suffix}`].value)} hPa</dd></div>
           </dl>
         </article>
@@ -367,9 +299,32 @@ function renderCityDetails(points) {
     .join("");
 }
 
-function setStatus(message, isError = false) {
-  statusEl.textContent = message;
-  statusEl.classList.toggle("error", isError);
+async function loadForecast() {
+  const model = models[modelSelect.value] || models.ifs;
+  const variableKey = variableSelect.value;
+  setStatus(`Loading ${model.label} ${variables[variableKey].label.toLowerCase()} animation...`);
+  stopAnimation();
+
+  try {
+    await fetchBoundary();
+    activeForecast = await fetchJson(model.dataUrl);
+    activeAnimation = await fetchJson(model.animationUrl);
+    activeFrames = activeAnimation.variables[variableKey].frames;
+    currentFrameIndex = 0;
+
+    if (!activeFrames.length) {
+      throw new Error("No animation frames available");
+    }
+
+    renderFrame();
+    renderCityDetails(activeForecast.city_points || []);
+    setStatus(
+      `${activeAnimation.model} ${variables[variableKey].label.toLowerCase()} animation loaded. Run: ${formatRunTime(activeAnimation.run_time_utc)}.`,
+    );
+    updatePlayback();
+  } catch (error) {
+    setStatus(error.message || "Forecast animation unavailable.", true);
+  }
 }
 
 function openProfiles() {
@@ -384,39 +339,39 @@ function closeProfiles() {
   document.body.classList.remove("modal-open");
 }
 
-async function loadForecast() {
-  const model = models[modelSelect.value] || models.ifs;
-  setStatus(`Loading ${model.label} maps...`);
-  mapGrid.innerHTML = "";
-  cityDetailGrid.innerHTML = "";
-
-  try {
-    await fetchBoundary();
-    const cachedForecast = await fetchCachedForecast(model);
-    const mapPoints = cachedForecast.map_points;
-    const cityPoints = cachedForecast.city_points;
-    model.label = cachedForecast.model || model.label;
-
-    currentMapPoints = cityPoints;
-    renderMaps(model, mapPoints);
-    if (cityPoints.length) {
-      renderCityDetails(cityPoints);
-    }
-    setStatus(`${model.label} maps loaded.`);
-  } catch (error) {
-    setStatus(error.message || "Forecast maps unavailable.", true);
-  }
-}
-
 forecastForm.addEventListener("submit", (event) => {
   event.preventDefault();
   loadForecast();
 });
 
 modelSelect.addEventListener("change", loadForecast);
+variableSelect.addEventListener("change", loadForecast);
+
+frameSlider.addEventListener("input", () => {
+  isPlaying = false;
+  updatePlayback();
+  setFrame(Number(frameSlider.value));
+});
+
+playToggle.addEventListener("click", () => {
+  isPlaying = !isPlaying;
+  updatePlayback();
+});
+
+prevFrameButton.addEventListener("click", () => {
+  isPlaying = false;
+  updatePlayback();
+  setFrame(currentFrameIndex - 1);
+});
+
+nextFrameButton.addEventListener("click", () => {
+  isPlaying = false;
+  updatePlayback();
+  setFrame(currentFrameIndex + 1);
+});
 
 citySelect.addEventListener("change", () => {
-  renderCityDetails(currentMapPoints);
+  renderCityDetails(activeForecast?.city_points || []);
 });
 
 profileOpenButtons.forEach((button) => {
