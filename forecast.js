@@ -56,8 +56,8 @@ const requestRetryDelayMs = 2500;
 const models = {
   ifs: {
     key: "ifs",
-    label: "IFS / HRES",
-    name: "ECMWF IFS / HRES",
+    label: "IFS 0.25 deg",
+    name: "ECMWF IFS 0.25 deg",
     endpoint: "https://api.open-meteo.com/v1/forecast",
     model: "ecmwf_ifs025",
     dataUrl: "assets/data/forecast-ifs.json",

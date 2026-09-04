@@ -41,15 +41,7 @@ const cityLocations = [
   "Dhanbad",
 ].map((name) => samplePoints.find((point) => point.name === name));
 
-const ifsCandidates = [
-  {
-    key: "ifs",
-    label: "IFS HRES 9 km",
-    endpoint: "https://api.open-meteo.com/v1/forecast",
-    model: "ecmwf_ifs04",
-    gridStepDegrees: 0.1,
-    probeOnly: true,
-  },
+const models = [
   {
     key: "ifs",
     label: "IFS 0.25 deg",
@@ -57,9 +49,6 @@ const ifsCandidates = [
     model: "ecmwf_ifs025",
     gridStepDegrees: 0.25,
   },
-];
-
-const fixedModels = [
   {
     key: "aifs",
     label: "AIFS 0.25 deg",
@@ -281,55 +270,7 @@ async function updateModel(model, gridPoints) {
 const boundary = JSON.parse(await readFile(boundaryFile, "utf8"));
 await mkdir(outputDir, { recursive: true });
 
-async function modelHasValues(model) {
-  const [probe] = await fetchBatch(
-    model,
-    [{ name: "New Delhi", latitude: 28.6139, longitude: 77.209 }],
-    mapVariables,
-  );
-  return [probe.t24.value, probe.t48.value, probe.r24.value, probe.r48.value].some(
-    (value) => Number.isFinite(Number(value)),
-  );
-}
-
-async function updateIfsModel() {
-  for (const candidate of ifsCandidates) {
-    let hasValues = false;
-
-    try {
-      hasValues = await modelHasValues(candidate);
-    } catch (error) {
-      console.log(`${candidate.label} probe failed: ${error.message}`);
-    }
-
-    if (!hasValues) {
-      console.log(`${candidate.label} returned no usable values; trying fallback`);
-      continue;
-    }
-
-    if (candidate.probeOnly) {
-      console.log(
-        `${candidate.label} returned values, but India-wide 9 km map generation exceeds the public coordinate API budget; trying fallback`,
-      );
-      continue;
-    }
-
-    try {
-      const gridPoints = buildIndiaGrid(boundary, candidate.gridStepDegrees);
-      await updateModel(candidate, gridPoints);
-      return;
-    } catch (error) {
-      console.log(`${candidate.label} could not be generated: ${error.message}`);
-      console.log("Trying fallback");
-    }
-  }
-
-  throw new Error("No usable ECMWF IFS forecast source returned values");
-}
-
-await updateIfsModel();
-
-for (const model of fixedModels) {
+for (const model of models) {
   const gridPoints = buildIndiaGrid(boundary, model.gridStepDegrees);
   await updateModel(model, gridPoints);
 }
