@@ -272,5 +272,9 @@ await mkdir(outputDir, { recursive: true });
 
 for (const model of models) {
   const gridPoints = buildIndiaGrid(boundary, model.gridStepDegrees);
-  await updateModel(model, gridPoints);
+  try {
+    await updateModel(model, gridPoints);
+  } catch (error) {
+    console.log(`${model.label} update skipped: ${error.message}`);
+  }
 }
