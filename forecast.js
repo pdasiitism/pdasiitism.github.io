@@ -26,6 +26,9 @@ const samplePoints = [
   { name: "Port Blair", latitude: 11.6234, longitude: 92.7265 },
 ];
 
+const FORECAST_DATA_ROOT =
+  "https://raw.githubusercontent.com/pdasiitism/pdasiitism.github.io/forecast-data/";
+
 const cityLocations = [
   "New Delhi",
   "Mumbai",
@@ -43,14 +46,18 @@ const models = {
   ifs: {
     key: "ifs",
     label: "IFS 0.25 deg",
-    dataUrl: "assets/data/forecast-ifs.json",
-    animationUrl: "assets/data/forecast-ifs-animation.json",
+    dataUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-ifs.json`,
+    animationUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-ifs-animation.json`,
+    fallbackDataUrl: "assets/data/forecast-ifs.json",
+    fallbackAnimationUrl: "assets/data/forecast-ifs-animation.json",
   },
   aifs: {
     key: "aifs",
     label: "AIFS 0.25 deg",
-    dataUrl: "assets/data/forecast-aifs.json",
-    animationUrl: "assets/data/forecast-aifs-animation.json",
+    dataUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-aifs.json`,
+    animationUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-aifs-animation.json`,
+    fallbackDataUrl: "assets/data/forecast-aifs.json",
+    fallbackAnimationUrl: "assets/data/forecast-aifs-animation.json",
   },
 };
 
@@ -94,6 +101,7 @@ let activeFrames = [];
 let currentFrameIndex = 0;
 let animationTimer = null;
 let isPlaying = true;
+let activeAssetRoot = "";
 
 function populateCities() {
   citySelect.innerHTML = cityLocations
@@ -208,6 +216,29 @@ async function fetchBoundary() {
   return indiaBoundary;
 }
 
+async function fetchModelData(model) {
+  try {
+    const [forecast, animation] = await Promise.all([
+      fetchJson(model.dataUrl),
+      fetchJson(model.animationUrl),
+    ]);
+    activeAssetRoot = FORECAST_DATA_ROOT;
+    return { forecast, animation };
+  } catch (remoteError) {
+    const [forecast, animation] = await Promise.all([
+      fetchJson(model.fallbackDataUrl),
+      fetchJson(model.fallbackAnimationUrl),
+    ]);
+    activeAssetRoot = "";
+    return { forecast, animation };
+  }
+}
+
+function frameImageUrl(path) {
+  const base = activeAssetRoot || window.location.href;
+  return new URL(path, base).href;
+}
+
 function renderFrame() {
   const model = models[modelSelect.value] || models.ifs;
   const variableKey = variableSelect.value;
@@ -231,7 +262,7 @@ function renderFrame() {
           ${boundaryPaths()}
         </clipPath>
       </defs>
-      <image href="${frame.image}?v=${activeAnimation.generated_at}" x="0" y="0" width="1000" height="1030" preserveAspectRatio="none" clip-path="url(#${clipId})"></image>
+      <image href="${frameImageUrl(frame.image)}?v=${activeAnimation.generated_at}" x="0" y="0" width="1000" height="1030" preserveAspectRatio="none" clip-path="url(#${clipId})"></image>
       <g class="india-map-shape">
         ${boundaryPaths()}
       </g>
@@ -310,8 +341,9 @@ async function loadForecast() {
 
   try {
     await fetchBoundary();
-    activeForecast = await fetchJson(model.dataUrl);
-    activeAnimation = await fetchJson(model.animationUrl);
+    const modelData = await fetchModelData(model);
+    activeForecast = modelData.forecast;
+    activeAnimation = modelData.animation;
     activeFrames = activeAnimation.variables[variableKey].frames;
     currentFrameIndex = 0;
 
