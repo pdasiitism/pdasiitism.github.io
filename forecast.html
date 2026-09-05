@@ -6,12 +6,12 @@
     <title>India Forecast | Prabal Das</title>
     <meta
       name="description"
-      content="India forecast maps for rainfall and temperature at 24-hour and 48-hour lead times."
+      content="Five-day ECMWF IFS and AIFS rainfall and temperature animations for India, with city forecasts."
     />
     <meta property="og:title" content="India Forecast | Prabal Das" />
     <meta
       property="og:description"
-      content="Compare India rainfall and temperature maps at 24-hour and 48-hour lead times."
+      content="Five-day ECMWF IFS and AIFS rainfall and temperature animations for India, with city forecasts."
     />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="assets/Nikon-2554.jpg?v=1" />
@@ -19,29 +19,30 @@
     <meta name="twitter:title" content="India Forecast | Prabal Das" />
     <meta
       name="twitter:description"
-      content="Compare India rainfall and temperature maps at 24-hour and 48-hour lead times."
+      content="Five-day ECMWF IFS and AIFS rainfall and temperature animations for India, with city forecasts."
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=14" />
+    <link rel="stylesheet" href="styles.css?v=15" />
   </head>
   <body>
+    <a class="skip-link" href="#forecast-title">Skip to forecast</a>
     <main class="forecast-page">
       <section class="forecast-hero" aria-labelledby="forecast-title">
         <nav class="topbar forecast-topbar" aria-label="Forecast navigation">
+          <a class="site-signature" href="index.html" aria-label="Prabal Das home">PD<span>Prabal Das</span></a>
           <a href="index.html#about">About</a>
           <a href="index.html#cv">Publications</a>
           <a href="forecast.html" aria-current="page">Forecast</a>
           <a href="index.html#contact">Contact</a>
           <button type="button" data-open-profiles>Profiles</button>
-          <a href="index.html">Home</a>
         </nav>
 
         <div class="forecast-hero-grid">
           <div>
-            <p class="eyebrow">India Forecast</p>
-            <h1 id="forecast-title">Forecast Animation</h1>
-            <p class="forecast-kicker">Five-day rainfall and temperature animation</p>
+            <p class="eyebrow">ECMWF / India / 120 hours</p>
+            <h1 id="forecast-title">Forecast</h1>
+            <p class="forecast-kicker">Rainfall &amp; temperature</p>
             <p class="forecast-note">
               ECMWF develops IFS, its physics-based global forecast system, and
               AIFS, its data-driven AI forecast system. These India maps are
@@ -50,16 +51,16 @@
             </p>
           </div>
           <form class="forecast-control" id="forecast-form">
-            <label for="model-select">Model</label>
+            <div class="forecast-select-field"><label for="model-select">Model</label>
             <select id="model-select" name="model">
               <option value="ifs">IFS</option>
               <option value="aifs">AIFS</option>
-            </select>
-            <label for="variable-select">Variable</label>
+            </select></div>
+            <div class="forecast-select-field"><label for="variable-select">Variable</label>
             <select id="variable-select" name="variable">
               <option value="rainfall">Rainfall</option>
               <option value="temperature">Temperature</option>
-            </select>
+            </select></div>
             <p id="forecast-status" role="status">Loading forecast...</p>
           </form>
         </div>

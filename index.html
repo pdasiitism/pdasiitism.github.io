@@ -23,12 +23,14 @@
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=11" />
+    <link rel="stylesheet" href="styles.css?v=15" />
   </head>
   <body>
+    <a class="skip-link" href="#about">Skip to content</a>
     <main class="profile-site">
       <section class="hero-section" aria-labelledby="profile-title">
         <nav class="topbar" aria-label="Profile navigation">
+          <a class="site-signature" href="index.html" aria-label="Prabal Das home">PD<span>Prabal Das</span></a>
           <a href="#about">About</a>
           <a href="#cv" data-jump-tab="journals">Publications</a>
           <a href="forecast.html">Forecast</a>
@@ -38,8 +40,8 @@
 
         <div class="hero-grid" id="about">
           <div class="hero-copy">
-            <p class="eyebrow">Interactive Academic CV</p>
-            <h1 id="profile-title">Prabal Das, Ph.D.</h1>
+            <p class="eyebrow">Research &amp; practice</p>
+            <h1 id="profile-title">Prabal Das<span class="name-degree">, Ph.D.</span></h1>
             <p class="hero-fields">
               Weather Forecasting | Hydroclimatology | Machine Learning | Climate Services
             </p>
@@ -61,7 +63,7 @@
               people can interpret and use.
             </p>
             <div class="hero-actions" aria-label="Primary profile actions">
-              <a class="primary-action" href="#cv">Explore CV</a>
+              <a class="primary-action" href="#cv" data-jump-tab="journals">View research <span aria-hidden="true">&rarr;</span></a>
               <a class="secondary-action" href="mailto:prabal@uchicagotrust.org">Email Prabal</a>
             </div>
           </div>
@@ -102,7 +104,6 @@
               <button type="button" aria-label="Show close-up portrait" data-photo-dot="1"></button>
             </div>
             <div class="availability">
-              <span class="status-dot"></span>
               Lead Researcher, Human Centered Weather Forecasting
             </div>
             <dl class="impact-stats">
@@ -287,7 +288,7 @@
       <section class="contact-section" id="contact">
         <div>
           <p class="eyebrow">Contact</p>
-          <h2>Connect with Prabal</h2>
+          <h2>Research starts with a conversation.</h2>
           <p>
             For research, collaboration, and academic communication, use the
             official email address or the linked academic profiles.
