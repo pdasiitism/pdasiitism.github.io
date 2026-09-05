@@ -109,7 +109,7 @@ h4 {
   border-radius: 4px;
   color: var(--ink-muted);
   font-size: 0.875rem;
-  font-weight: 550;
+  font-weight: 700;
   line-height: 1.5;
   min-height: 42px;
   padding: 9px 13px;
@@ -137,7 +137,7 @@ h4 {
   color: var(--foreground);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 .hero-grid {
   display: grid;
@@ -152,13 +152,13 @@ h4 {
 .eyebrow {
   color: var(--accent-strong);
   font-size: 0.8125rem;
-  font-weight: 650;
+  font-weight: 800;
   margin: 0 0 14px;
   text-transform: uppercase;
 }
 h1 {
   font-size: 4.25rem;
-  font-weight: 450;
+  font-weight: 600;
   margin-bottom: 20px;
 }
 .hero-copy h1 {
@@ -172,14 +172,14 @@ h1 {
 .hero-fields {
   color: var(--accent-strong);
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 800;
   line-height: 1.8;
   margin-bottom: 24px;
 }
 .hero-thesis {
   font-size: 1.375rem;
   line-height: 1.5;
-  font-weight: 550;
+  font-weight: 750;
   max-width: 820px;
   margin-bottom: 24px;
 }
@@ -192,7 +192,7 @@ h1 {
 }
 .hero-bio strong {
   color: #3e464a;
-  font-weight: 550;
+  font-weight: 750;
 }
 .hero-actions, .contact-actions {
   display: flex;
@@ -209,7 +209,7 @@ h1 {
   padding: 10px 18px;
   border-radius: 4px;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 .primary-action {
@@ -317,6 +317,7 @@ h1 {
   border-left: 2px solid var(--accent);
   padding-left: 12px;
   color: var(--ink-muted);
+  font-weight: 700;
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -337,11 +338,13 @@ h1 {
   color: var(--ink-muted);
   font-size: 0.8125rem;
   line-height: 1.4;
+  font-weight: 700;
 }
 .impact-stats dd {
   margin: 0 0 4px;
   color: var(--accent-strong);
   font-size: 1.75rem;
+  font-weight: 800;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
@@ -363,7 +366,7 @@ h1 {
   background: transparent;
   color: var(--ink-muted);
   font-size: 0.9375rem;
-  font-weight: 550;
+  font-weight: 700;
 }
 .tab-list button.active {
   border-bottom-color: var(--accent);
@@ -400,7 +403,7 @@ h1 {
 }
 .panel-header h3 {
   font-size: 1.5rem;
-  font-weight: 550;
+  font-weight: 700;
   margin-bottom: 0;
 }
 .segmented-control {
@@ -416,6 +419,7 @@ h1 {
   padding: 7px 12px;
   min-height: 38px;
   font-size: 0.875rem;
+  font-weight: 650;
 }
 .segmented-control button.active {
   background: var(--accent-soft);
@@ -448,13 +452,13 @@ h1 {
   margin-bottom: 14px;
   color: var(--brick);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 800;
 }
 .publication-card h4, .conference-grid h4 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.3125rem;
   line-height: 1.45;
-  font-weight: 500;
+  font-weight: 650;
   text-wrap: pretty;
 }
 .publication-card p, .conference-grid p {
@@ -471,7 +475,7 @@ h1 {
   margin-top: auto;
   padding-top: 8px;
   font-size: 0.875rem;
-  font-weight: 550;
+  font-weight: 700;
 }
 .publication-card footer > span, .conference-grid footer > span {
   flex: 1 1 230px;
@@ -482,7 +486,7 @@ h1 {
   gap: 8px;
   color: var(--accent-strong);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 750;
   min-height: 28px;
 }
 .publication-link::after {
@@ -495,7 +499,7 @@ h1 {
 .conference-grid article > span, .timeline article > span, .education-list article > span {
   color: var(--brick);
   font-size: 0.875rem;
-  font-weight: 550;
+  font-weight: 800;
   margin-bottom: 14px;
 }
 .timeline article {
@@ -507,7 +511,7 @@ h1 {
 }
 .timeline h4, .education-list h4 {
   font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 750;
 }
 .timeline p, .education-list p, .education-list small {
   color: var(--ink-muted);
@@ -559,6 +563,7 @@ h1 {
 .meter-ring span {
   color: var(--accent-strong);
   font-size: 2rem;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 .skill-list {
@@ -575,6 +580,7 @@ h1 {
   text-align: left;
   color: var(--foreground);
   font-size: 0.9375rem;
+  font-weight: 700;
 }
 .skill-list button.selected {
   background: var(--accent-soft);
@@ -613,7 +619,7 @@ h1 {
 .contact-section h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 2rem;
-  font-weight: 450;
+  font-weight: 650;
   max-width: 520px;
 }
 .contact-section p {
@@ -676,7 +682,7 @@ h1 {
 .profile-modal-panel h2 {
   font-size: 1.75rem;
   font-family: Georgia, serif;
-  font-weight: 450;
+  font-weight: 650;
   margin-bottom: 24px;
   padding-right: 32px;
 }
@@ -710,6 +716,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 4px;
   font-size: 0.875rem;
+  font-weight: 700;
 }
 .profile-link-grid a::after {
   content: "\2197";
@@ -733,7 +740,7 @@ h1 {
 }
 .forecast-hero h1 {
   font-size: 2rem;
-  font-weight: 550;
+  font-weight: 750;
   margin-bottom: 8px;
 }
 .forecast-hero .eyebrow {
@@ -742,6 +749,7 @@ h1 {
 .forecast-kicker {
   color: var(--ink-muted);
   font-size: 1rem;
+  font-weight: 700;
   margin-bottom: 0;
 }
 .forecast-note {
@@ -765,7 +773,7 @@ h1 {
 .forecast-control label, .city-select-label span {
   color: var(--ink-muted);
   font-size: 0.875rem;
-  font-weight: 550;
+  font-weight: 750;
 }
 .forecast-control select, .city-select-label select {
   appearance: auto;
@@ -777,6 +785,7 @@ h1 {
   width: 100%;
   padding: 8px 12px;
   font-size: 0.9375rem;
+  font-weight: 650;
 }
 .forecast-control p {
   grid-column: 1 / -1;
@@ -810,11 +819,11 @@ h1 {
 .forecast-animation-card header span, .city-detail-card header span {
   color: var(--accent-strong);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 800;
 }
 .forecast-animation-card h2 {
   font-size: 1.25rem;
-  font-weight: 550;
+  font-weight: 750;
   margin: 4px 0 0;
 }
 .forecast-animation-card header p {
@@ -822,6 +831,7 @@ h1 {
   color: var(--ink-muted);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 .forecast-animation-map {
   display: grid;
@@ -874,7 +884,7 @@ h1 {
   background: white;
   color: var(--foreground);
   font-size: 0.875rem;
-  font-weight: 550;
+  font-weight: 700;
 }
 .animation-buttons #play-toggle {
   min-width: 76px;
@@ -896,6 +906,7 @@ h1 {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
+  font-weight: 750;
 }
 .forecast-timeline input {
   accent-color: var(--accent);
@@ -920,7 +931,7 @@ h1 {
   text-align: right;
   color: var(--foreground);
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 800;
 }
 .forecast-colorbar i {
   display: block;
@@ -939,6 +950,7 @@ h1 {
   font-size: 0.9375rem;
   line-height: 1.4;
   text-align: center;
+  font-weight: 700;
 }
 .forecast-colorbar span:first-child {
   text-align: left;
@@ -962,7 +974,7 @@ h1 {
 }
 .city-forecast-header h2 {
   font-size: 1.5rem;
-  font-weight: 550;
+  font-weight: 750;
   margin: 0;
 }
 .city-select-label {
@@ -982,7 +994,7 @@ h1 {
 }
 .city-detail-card h3 {
   font-size: 1.375rem;
-  font-weight: 550;
+  font-weight: 750;
   margin: 8px 0;
 }
 .city-detail-card header p {
@@ -1003,12 +1015,14 @@ h1 {
 .city-detail-card dt {
   color: var(--ink-muted);
   font-size: 0.9375rem;
+  font-weight: 650;
 }
 .city-detail-card dd {
   color: var(--foreground);
   margin: 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  font-weight: 800;
 }
 @media (min-width: 1600px) {
   .hero-grid {
