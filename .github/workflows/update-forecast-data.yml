@@ -30,8 +30,17 @@ jobs:
       - name: Fetch forecast data
         run: python scripts/update_ecmwf_forecast_data.py
 
-      - name: Commit forecast data
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Stage forecast output
+        run: |
+          mkdir -p forecast-publish/assets/data forecast-publish/assets/forecast
+          cp assets/data/forecast-*.json forecast-publish/assets/data/
+          cp assets/forecast/*.png forecast-publish/assets/forecast/
+
+      - name: Publish current forecast output
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          commit_message: "Update cached forecast data"
-          file_pattern: "assets/data/forecast-*.json"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: forecast-data
+          publish_dir: ./forecast-publish
+          force_orphan: true
+          full_commit_message: "Update current forecast output"
