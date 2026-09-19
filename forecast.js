@@ -51,6 +51,15 @@ const models = {
     fallbackDataUrl: "assets/data/forecast-ifs.json",
     fallbackAnimationUrl: "assets/data/forecast-ifs-animation.json",
   },
+  "ifs-ens": {
+    key: "ifs-ens",
+    label: "IFS ENS 0.25 deg",
+    ensemble: true,
+    dataUrl: null,
+    animationUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-ifs-ens-animation.json`,
+    fallbackDataUrl: null,
+    fallbackAnimationUrl: "assets/data/forecast-ifs-ens-animation.json",
+  },
   aifs: {
     key: "aifs",
     label: "AIFS 0.25 deg",
@@ -62,6 +71,7 @@ const models = {
   "aifs-ens": {
     key: "aifs-ens",
     label: "AIFS ENS 0.25 deg",
+    ensemble: true,
     dataUrl: null,
     animationUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-aifs-ens-animation.json`,
     fallbackDataUrl: null,
@@ -256,7 +266,7 @@ function frameImageUrl(path) {
 }
 
 function isEnsembleModel(model = models[modelSelect.value]) {
-  return model?.key === "aifs-ens";
+  return Boolean(model?.ensemble);
 }
 
 function selectedProduct(model = models[modelSelect.value] || models.ifs) {

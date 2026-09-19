@@ -49,6 +49,20 @@ MODELS = [
     {"key": "ifs", "label": "IFS 0.25 deg", "client_model": "ifs"},
     {"key": "aifs", "label": "AIFS 0.25 deg", "client_model": "aifs-single"},
 ]
+ENSEMBLE_MODELS = [
+    {
+        "key": "aifs-ens",
+        "label": "AIFS ENS 0.25 deg",
+        "client_model": "aifs-ens",
+        "forecast_times": None,
+    },
+    {
+        "key": "ifs-ens",
+        "label": "IFS ENS 0.25 deg",
+        "client_model": "ifs",
+        "forecast_times": (0, 12),
+    },
+]
 DATA_SOURCES = ["google", "aws", "ecmwf"]
 
 PARAMS = {
@@ -59,7 +73,7 @@ PARAMS = {
     "msl": "pressure_msl",
 }
 
-AIFS_ENS_QPF = {
+ENSEMBLE_QPF_PRODUCTS = {
     "tpg1": {"threshold_mm": 1, "label": "At least 1 mm"},
     "tpg5": {"threshold_mm": 5, "label": "At least 5 mm"},
     "tpg10": {"threshold_mm": 10, "label": "At least 10 mm"},
@@ -334,37 +348,60 @@ def retrieve_model(model, target):
     raise RuntimeError(f"{model['label']} download failed from all ECMWF Open Data mirrors") from last_error
 
 
-def retrieve_aifs_ens_qpf(target):
+def retrieve_ensemble_qpf(model, target):
     last_error = None
 
     for source in DATA_SOURCES:
         try:
             client = Client(
                 source=source,
-                model="aifs-ens",
+                model=model["client_model"],
                 resol="0p25",
                 preserve_request_order=True,
                 infer_stream_keyword=True,
                 maximum_retries=3,
                 retry_after=20,
             )
+            request = {
+                "stream": "enfo",
+                "type": "ep",
+                "step": QPF_STEP_RANGES,
+                "param": list(ENSEMBLE_QPF_PRODUCTS),
+            }
+            if model["forecast_times"]:
+                available_cycles = [
+                    client.latest(
+                        time=forecast_time,
+                        stream="enfo",
+                        type="ep",
+                        step=QPF_STEP_RANGES[0],
+                        param="tpg10",
+                    )
+                    for forecast_time in model["forecast_times"]
+                ]
+                latest_cycle = max(available_cycles)
+                request["date"] = latest_cycle.strftime("%Y%m%d")
+                request["time"] = latest_cycle.hour
+
             client.retrieve(
-                stream="enfo",
-                type="ep",
-                step=QPF_STEP_RANGES,
-                param=list(AIFS_ENS_QPF),
                 target=str(target),
+                **request,
             )
-            print(f"Downloaded AIFS ENS QPF probabilities from ECMWF Open Data mirror: {source}")
+            print(
+                f"Downloaded {model['label']} QPF probabilities "
+                f"from ECMWF Open Data mirror: {source}"
+            )
             return source
         except Exception as error:
             last_error = error
-            print(f"AIFS ENS QPF source {source} failed: {error}")
+            print(f"{model['label']} QPF source {source} failed: {error}")
 
-    raise RuntimeError("AIFS ENS QPF download failed from all ECMWF Open Data mirrors") from last_error
+    raise RuntimeError(
+        f"{model['label']} QPF download failed from all ECMWF Open Data mirrors"
+    ) from last_error
 
 
-def read_aifs_ens_qpf(path, boundary):
+def read_ensemble_qpf(path, boundary):
     gridded_fields = {}
     run_date = None
 
@@ -376,7 +413,7 @@ def read_aifs_ens_qpf(path, boundary):
 
             try:
                 short_name = codes_get(gid, "shortName")
-                if short_name not in AIFS_ENS_QPF:
+                if short_name not in ENSEMBLE_QPF_PRODUCTS:
                     continue
 
                 units = codes_get(gid, "units")
@@ -548,12 +585,14 @@ def write_animation_manifest(model, source, run_date, gridded_fields, boundary):
     print(f"Wrote {manifest_file.relative_to(ROOT)}")
 
 
-def make_aifs_ens_qpf_frame(short_name, start_step, end_step, field, boundary, run_date):
+def make_ensemble_qpf_frame(
+    model, short_name, start_step, end_step, field, boundary, run_date
+):
     interpolated = np.clip(interpolate_grid(field, boundary), 0, 100)
     rgb = colors_for_values(interpolated, PROBABILITY_STOPS)
-    threshold = AIFS_ENS_QPF[short_name]["threshold_mm"]
+    threshold = ENSEMBLE_QPF_PRODUCTS[short_name]["threshold_mm"]
     image_path = FRAME_DIR / (
-        f"aifs-ens-qpf-{threshold}mm-p{start_step:03d}-{end_step:03d}.png"
+        f"{model['key']}-qpf-{threshold}mm-p{start_step:03d}-{end_step:03d}.png"
     )
     write_png_rgb(image_path, rgb)
     finite_values = interpolated[np.isfinite(interpolated)]
@@ -571,10 +610,10 @@ def make_aifs_ens_qpf_frame(short_name, start_step, end_step, field, boundary, r
     }
 
 
-def write_aifs_ens_qpf_manifest(source, run_date, gridded_fields, boundary):
+def write_ensemble_qpf_manifest(model, source, run_date, gridded_fields, boundary):
     manifest = {
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "model": "AIFS ENS 0.25 deg",
+        "model": model["label"],
         "source": f"ECMWF Open Data ({source})",
         "run_time_utc": run_date,
         "grid_step_degrees": 0.25,
@@ -584,14 +623,15 @@ def write_aifs_ens_qpf_manifest(source, run_date, gridded_fields, boundary):
         "variables": {},
     }
 
-    for short_name, config in AIFS_ENS_QPF.items():
+    for short_name, config in ENSEMBLE_QPF_PRODUCTS.items():
         frames = []
         for start_step, end_step in QPF_PERIODS:
             field = gridded_fields.get((short_name, start_step, end_step))
             if field is None:
                 continue
             frames.append(
-                make_aifs_ens_qpf_frame(
+                make_ensemble_qpf_frame(
+                    model,
                     short_name,
                     start_step,
                     end_step,
@@ -610,7 +650,7 @@ def write_aifs_ens_qpf_manifest(source, run_date, gridded_fields, boundary):
             "frames": frames,
         }
 
-    manifest_file = OUTPUT_DIR / "forecast-aifs-ens-animation.json"
+    manifest_file = OUTPUT_DIR / f"forecast-{model['key']}-animation.json"
     manifest_file.write_text(json.dumps(manifest, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"Wrote {manifest_file.relative_to(ROOT)}")
 
@@ -650,16 +690,16 @@ def update_model(model, boundary):
     write_animation_manifest(model, source, run_date, gridded_fields, boundary)
 
 
-def update_aifs_ens_qpf(boundary):
+def update_ensemble_qpf(model, boundary):
     with tempfile.TemporaryDirectory() as temp_dir:
-        grib_file = Path(temp_dir) / "aifs-ens-qpf.grib2"
-        source = retrieve_aifs_ens_qpf(grib_file)
-        gridded_fields, run_date = read_aifs_ens_qpf(grib_file, boundary)
+        grib_file = Path(temp_dir) / f"{model['key']}-qpf.grib2"
+        source = retrieve_ensemble_qpf(model, grib_file)
+        gridded_fields, run_date = read_ensemble_qpf(grib_file, boundary)
 
     if not gridded_fields:
-        raise RuntimeError("AIFS ENS did not produce QPF probability fields")
+        raise RuntimeError(f"{model['label']} did not produce QPF probability fields")
 
-    write_aifs_ens_qpf_manifest(source, run_date, gridded_fields, boundary)
+    write_ensemble_qpf_manifest(model, source, run_date, gridded_fields, boundary)
 
 
 def main():
@@ -672,7 +712,8 @@ def main():
     for model in MODELS:
         update_model(model, boundary)
 
-    update_aifs_ens_qpf(boundary)
+    for model in ENSEMBLE_MODELS:
+        update_ensemble_qpf(model, boundary)
 
 
 if __name__ == "__main__":

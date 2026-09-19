@@ -45,8 +45,8 @@
             <p class="forecast-kicker">Rainfall &amp; temperature</p>
             <p class="forecast-note">
               ECMWF develops IFS, its physics-based global forecast system, and
-              AIFS, its data-driven AI forecast system. AIFS ENS adds a
-              51-member view of rainfall uncertainty. These India maps use
+              AIFS, its data-driven AI forecast system. IFS ENS and AIFS ENS add
+              51-member views of rainfall uncertainty. These India maps use
               0.25 degree fields smoothed for display using bilinear interpolation.
             </p>
           </div>
@@ -54,6 +54,7 @@
             <div class="forecast-select-field"><label for="model-select">Model</label>
             <select id="model-select" name="model">
               <option value="ifs">IFS</option>
+              <option value="ifs-ens">IFS ENS</option>
               <option value="aifs">AIFS</option>
               <option value="aifs-ens">AIFS ENS</option>
             </select></div>
@@ -140,6 +141,6 @@
         </div>
       </section>
     </div>
-    <script src="forecast.js?v=19"></script>
+    <script src="forecast.js?v=20"></script>
   </body>
 </html>
