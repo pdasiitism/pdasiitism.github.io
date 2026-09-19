@@ -119,6 +119,7 @@ let currentFrameIndex = 0;
 let animationTimer = null;
 let isPlaying = true;
 let activeAssetRoot = "";
+let loadRequestId = 0;
 
 function populateCities() {
   citySelect.innerHTML = cityLocations
@@ -239,15 +240,13 @@ async function fetchModelData(model) {
       model.dataUrl ? fetchJson(model.dataUrl) : Promise.resolve(null),
       fetchJson(model.animationUrl),
     ]);
-    activeAssetRoot = FORECAST_DATA_ROOT;
-    return { forecast, animation };
+    return { forecast, animation, assetRoot: FORECAST_DATA_ROOT };
   } catch (remoteError) {
     const [forecast, animation] = await Promise.all([
       model.fallbackDataUrl ? fetchJson(model.fallbackDataUrl) : Promise.resolve(null),
       fetchJson(model.fallbackAnimationUrl),
     ]);
-    activeAssetRoot = "";
-    return { forecast, animation };
+    return { forecast, animation, assetRoot: "" };
   }
 }
 
@@ -385,6 +384,7 @@ function renderCityDetails(points) {
 }
 
 async function loadForecast() {
+  const requestId = ++loadRequestId;
   const model = models[modelSelect.value] || models.ifs;
   const product = selectedProduct(model);
   setStatus(`Loading ${model.label} ${product.presentation.label.toLowerCase()} animation...`);
@@ -393,8 +393,13 @@ async function loadForecast() {
   try {
     await fetchBoundary();
     const modelData = await fetchModelData(model);
+    if (requestId !== loadRequestId) {
+      return;
+    }
+
     activeForecast = modelData.forecast;
     activeAnimation = modelData.animation;
+    activeAssetRoot = modelData.assetRoot;
     activeFrames = activeAnimation.variables[product.dataKey]?.frames || [];
     currentFrameIndex = 0;
 
@@ -413,6 +418,9 @@ async function loadForecast() {
     );
     updatePlayback();
   } catch (error) {
+    if (requestId !== loadRequestId) {
+      return;
+    }
     setStatus(error.message || "Forecast animation unavailable.", true);
   }
 }
