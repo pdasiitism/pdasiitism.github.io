@@ -26,6 +26,8 @@ BOUNDARY_FILE = ROOT / "assets" / "maps" / "india-state-boundary.geojson"
 
 FORECAST_STEPS = list(range(0, 121, 6))
 RAIN_STEPS = [step for step in FORECAST_STEPS if step > 0]
+QPF_PERIODS = [(start, start + 24) for start in range(0, 97, 12)]
+QPF_STEP_RANGES = [f"{start}-{end}" for start, end in QPF_PERIODS]
 CITY_STEPS = (24, 48)
 FRAME_WIDTH = 720
 FRAME_HEIGHT = 820
@@ -56,6 +58,27 @@ PARAMS = {
     "10v": "wind_v_10m",
     "msl": "pressure_msl",
 }
+
+AIFS_ENS_QPF = {
+    "tpg1": {"threshold_mm": 1, "label": "At least 1 mm"},
+    "tpg5": {"threshold_mm": 5, "label": "At least 5 mm"},
+    "tpg10": {"threshold_mm": 10, "label": "At least 10 mm"},
+    "tpg20": {"threshold_mm": 20, "label": "At least 20 mm"},
+    "tpg25": {"threshold_mm": 25, "label": "At least 25 mm"},
+    "tpg50": {"threshold_mm": 50, "label": "At least 50 mm"},
+    "tpg100": {"threshold_mm": 100, "label": "At least 100 mm"},
+}
+
+PROBABILITY_STOPS = [
+    (0, (247, 251, 255)),
+    (10, (220, 238, 244)),
+    (25, (166, 219, 160)),
+    (40, (65, 182, 196)),
+    (55, (44, 127, 184)),
+    (70, (253, 174, 97)),
+    (85, (215, 25, 28)),
+    (100, (106, 27, 154)),
+]
 
 ANIMATION_VARIABLES = {
     "temperature": {
@@ -134,6 +157,10 @@ def convert_value(variable, units, value):
         value *= 1000
     elif variable == "pressure_msl" and value > 2000:
         value /= 100
+    elif variable == "probability":
+        if units not in ("%", "percent") and 0 <= value <= 1:
+            value *= 100
+        value = max(0, min(100, value))
 
     return value
 
@@ -307,6 +334,78 @@ def retrieve_model(model, target):
     raise RuntimeError(f"{model['label']} download failed from all ECMWF Open Data mirrors") from last_error
 
 
+def retrieve_aifs_ens_qpf(target):
+    last_error = None
+
+    for source in DATA_SOURCES:
+        try:
+            client = Client(
+                source=source,
+                model="aifs-ens",
+                resol="0p25",
+                preserve_request_order=True,
+                infer_stream_keyword=True,
+                maximum_retries=3,
+                retry_after=20,
+            )
+            client.retrieve(
+                stream="enfo",
+                type="ep",
+                step=QPF_STEP_RANGES,
+                param=list(AIFS_ENS_QPF),
+                target=str(target),
+            )
+            print(f"Downloaded AIFS ENS QPF probabilities from ECMWF Open Data mirror: {source}")
+            return source
+        except Exception as error:
+            last_error = error
+            print(f"AIFS ENS QPF source {source} failed: {error}")
+
+    raise RuntimeError("AIFS ENS QPF download failed from all ECMWF Open Data mirrors") from last_error
+
+
+def read_aifs_ens_qpf(path, boundary):
+    gridded_fields = {}
+    run_date = None
+
+    with path.open("rb") as handle:
+        while True:
+            gid = codes_grib_new_from_file(handle)
+            if gid is None:
+                break
+
+            try:
+                short_name = codes_get(gid, "shortName")
+                if short_name not in AIFS_ENS_QPF:
+                    continue
+
+                units = codes_get(gid, "units")
+                start_step = int(codes_get(gid, "startStep"))
+                end_step = int(codes_get(gid, "endStep"))
+                data_date = str(codes_get(gid, "dataDate"))
+                data_time = int(codes_get(gid, "dataTime"))
+                run_date = run_date or f"{data_date[:4]}-{data_date[4:6]}-{data_date[6:]}T{data_time:04d}Z"
+                values = codes_get_array(gid, "values")
+                latitudes = codes_get_array(gid, "latitudes")
+                longitudes = codes_get_array(gid, "longitudes")
+            finally:
+                codes_release(gid)
+
+            if (start_step, end_step) not in QPF_PERIODS:
+                continue
+
+            gridded_fields[(short_name, start_step, end_step)] = field_to_grid(
+                latitudes,
+                longitudes,
+                values,
+                "probability",
+                units,
+                boundary,
+            )
+
+    return gridded_fields, run_date
+
+
 def interpolate_grid(field, boundary):
     min_lon, min_lat, max_lon, max_lat = boundary["bbox"]
     lats = field["latitudes"]
@@ -449,6 +548,73 @@ def write_animation_manifest(model, source, run_date, gridded_fields, boundary):
     print(f"Wrote {manifest_file.relative_to(ROOT)}")
 
 
+def make_aifs_ens_qpf_frame(short_name, start_step, end_step, field, boundary, run_date):
+    interpolated = np.clip(interpolate_grid(field, boundary), 0, 100)
+    rgb = colors_for_values(interpolated, PROBABILITY_STOPS)
+    threshold = AIFS_ENS_QPF[short_name]["threshold_mm"]
+    image_path = FRAME_DIR / (
+        f"aifs-ens-qpf-{threshold}mm-p{start_step:03d}-{end_step:03d}.png"
+    )
+    write_png_rgb(image_path, rgb)
+    finite_values = interpolated[np.isfinite(interpolated)]
+
+    return {
+        "start_step": start_step,
+        "end_step": end_step,
+        "start_time": lead_valid_time(run_date, start_step),
+        "valid_time": lead_valid_time(run_date, end_step),
+        "image": str(image_path.relative_to(ROOT)),
+        "range": {
+            "min": round(float(np.min(finite_values)), 2),
+            "max": round(float(np.max(finite_values)), 2),
+        },
+    }
+
+
+def write_aifs_ens_qpf_manifest(source, run_date, gridded_fields, boundary):
+    manifest = {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "model": "AIFS ENS 0.25 deg",
+        "source": f"ECMWF Open Data ({source})",
+        "run_time_utc": run_date,
+        "grid_step_degrees": 0.25,
+        "display_interpolation": "bilinear",
+        "ensemble_members": 51,
+        "product": "Probability of 24-hour total precipitation exceeding a threshold",
+        "variables": {},
+    }
+
+    for short_name, config in AIFS_ENS_QPF.items():
+        frames = []
+        for start_step, end_step in QPF_PERIODS:
+            field = gridded_fields.get((short_name, start_step, end_step))
+            if field is None:
+                continue
+            frames.append(
+                make_aifs_ens_qpf_frame(
+                    short_name,
+                    start_step,
+                    end_step,
+                    field,
+                    boundary,
+                    run_date,
+                )
+            )
+
+        manifest["variables"][short_name] = {
+            "label": config["label"],
+            "threshold_mm": config["threshold_mm"],
+            "period_hours": 24,
+            "unit": "%",
+            "legend": ["0", "25", "50", "75", "100"],
+            "frames": frames,
+        }
+
+    manifest_file = OUTPUT_DIR / "forecast-aifs-ens-animation.json"
+    manifest_file.write_text(json.dumps(manifest, separators=(",", ":")) + "\n", encoding="utf-8")
+    print(f"Wrote {manifest_file.relative_to(ROOT)}")
+
+
 def update_model(model, boundary):
     with tempfile.TemporaryDirectory() as temp_dir:
         grib_file = Path(temp_dir) / f"{model['key']}.grib2"
@@ -484,6 +650,18 @@ def update_model(model, boundary):
     write_animation_manifest(model, source, run_date, gridded_fields, boundary)
 
 
+def update_aifs_ens_qpf(boundary):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        grib_file = Path(temp_dir) / "aifs-ens-qpf.grib2"
+        source = retrieve_aifs_ens_qpf(grib_file)
+        gridded_fields, run_date = read_aifs_ens_qpf(grib_file, boundary)
+
+    if not gridded_fields:
+        raise RuntimeError("AIFS ENS did not produce QPF probability fields")
+
+    write_aifs_ens_qpf_manifest(source, run_date, gridded_fields, boundary)
+
+
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     if FRAME_DIR.exists():
@@ -493,6 +671,8 @@ def main():
 
     for model in MODELS:
         update_model(model, boundary)
+
+    update_aifs_ens_qpf(boundary)
 
 
 if __name__ == "__main__":

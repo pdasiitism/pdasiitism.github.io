@@ -23,7 +23,7 @@
     />
     <meta name="twitter:image" content="assets/Nikon-2554.jpg?v=1" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=17" />
+    <link rel="stylesheet" href="styles.css?v=18" />
   </head>
   <body>
     <a class="skip-link" href="#forecast-title">Skip to forecast</a>
@@ -45,9 +45,9 @@
             <p class="forecast-kicker">Rainfall &amp; temperature</p>
             <p class="forecast-note">
               ECMWF develops IFS, its physics-based global forecast system, and
-              AIFS, its data-driven AI forecast system. These India maps are
-              generated from ECMWF Open Data 0.25 degree fields and smoothed for
-              display using bilinear interpolation.
+              AIFS, its data-driven AI forecast system. AIFS ENS adds a
+              51-member view of rainfall uncertainty. These India maps use
+              0.25 degree fields smoothed for display using bilinear interpolation.
             </p>
           </div>
           <form class="forecast-control" id="forecast-form">
@@ -55,12 +55,25 @@
             <select id="model-select" name="model">
               <option value="ifs">IFS</option>
               <option value="aifs">AIFS</option>
+              <option value="aifs-ens">AIFS ENS</option>
             </select></div>
-            <div class="forecast-select-field"><label for="variable-select">Variable</label>
+            <div class="forecast-select-field" id="variable-select-field"><label for="variable-select">Variable</label>
             <select id="variable-select" name="variable">
               <option value="rainfall">Rainfall</option>
               <option value="temperature">Temperature</option>
             </select></div>
+            <div class="forecast-select-field" id="qpf-threshold-field" hidden>
+              <label for="qpf-threshold-select">24-hour QPF threshold</label>
+              <select id="qpf-threshold-select" name="qpf-threshold">
+                <option value="tpg1">At least 1 mm</option>
+                <option value="tpg5">At least 5 mm</option>
+                <option value="tpg10" selected>At least 10 mm</option>
+                <option value="tpg20">At least 20 mm</option>
+                <option value="tpg25">At least 25 mm</option>
+                <option value="tpg50">At least 50 mm</option>
+                <option value="tpg100">At least 100 mm</option>
+              </select>
+            </div>
             <p id="forecast-status" role="status">Loading forecast...</p>
           </form>
         </div>
@@ -91,7 +104,7 @@
         </article>
       </section>
 
-      <section class="forecast-board city-forecast-section" aria-labelledby="city-forecast-title">
+      <section class="forecast-board city-forecast-section" id="city-forecast-section" aria-labelledby="city-forecast-title">
         <div class="city-forecast-header">
           <div>
             <p class="eyebrow">City Forecast</p>
@@ -127,6 +140,6 @@
         </div>
       </section>
     </div>
-    <script src="forecast.js?v=17"></script>
+    <script src="forecast.js?v=18"></script>
   </body>
 </html>

@@ -59,6 +59,14 @@ const models = {
     fallbackDataUrl: "assets/data/forecast-aifs.json",
     fallbackAnimationUrl: "assets/data/forecast-aifs-animation.json",
   },
+  "aifs-ens": {
+    key: "aifs-ens",
+    label: "AIFS ENS 0.25 deg",
+    dataUrl: null,
+    animationUrl: `${FORECAST_DATA_ROOT}assets/data/forecast-aifs-ens-animation.json`,
+    fallbackDataUrl: null,
+    fallbackAnimationUrl: "assets/data/forecast-aifs-ens-animation.json",
+  },
 };
 
 const variables = {
@@ -72,10 +80,18 @@ const variables = {
     gradient:
       "linear-gradient(90deg,#f7fbff,#c7e9b4,#41b6c4,#2c7fb8,#fdae61,#d7191c,#6a1b9a)",
   },
+  probability: {
+    label: "QPF probability",
+    gradient:
+      "linear-gradient(90deg,#f7fbff,#dceef4,#a6dba0,#41b6c4,#2c7fb8,#fdae61,#d7191c,#6a1b9a)",
+  },
 };
 
 const modelSelect = document.querySelector("#model-select");
 const variableSelect = document.querySelector("#variable-select");
+const variableSelectField = document.querySelector("#variable-select-field");
+const qpfThresholdField = document.querySelector("#qpf-threshold-field");
+const qpfThresholdSelect = document.querySelector("#qpf-threshold-select");
 const forecastForm = document.querySelector("#forecast-form");
 const statusEl = document.querySelector("#forecast-status");
 const animationMap = document.querySelector("#forecast-animation-map");
@@ -90,6 +106,7 @@ const prevFrameButton = document.querySelector("#prev-frame");
 const nextFrameButton = document.querySelector("#next-frame");
 const citySelect = document.querySelector("#city-select");
 const cityDetailGrid = document.querySelector("#city-detail-grid");
+const cityForecastSection = document.querySelector("#city-forecast-section");
 const profileModal = document.querySelector("#profile-modal");
 const profileOpenButtons = [...document.querySelectorAll("[data-open-profiles]")];
 const profileCloseButtons = [...document.querySelectorAll("[data-close-profiles]")];
@@ -219,14 +236,14 @@ async function fetchBoundary() {
 async function fetchModelData(model) {
   try {
     const [forecast, animation] = await Promise.all([
-      fetchJson(model.dataUrl),
+      model.dataUrl ? fetchJson(model.dataUrl) : Promise.resolve(null),
       fetchJson(model.animationUrl),
     ]);
     activeAssetRoot = FORECAST_DATA_ROOT;
     return { forecast, animation };
   } catch (remoteError) {
     const [forecast, animation] = await Promise.all([
-      fetchJson(model.fallbackDataUrl),
+      model.fallbackDataUrl ? fetchJson(model.fallbackDataUrl) : Promise.resolve(null),
       fetchJson(model.fallbackAnimationUrl),
     ]);
     activeAssetRoot = "";
@@ -239,24 +256,58 @@ function frameImageUrl(path) {
   return new URL(path, base).href;
 }
 
+function isEnsembleModel(model = models[modelSelect.value]) {
+  return model?.key === "aifs-ens";
+}
+
+function selectedProduct(model = models[modelSelect.value] || models.ifs) {
+  if (isEnsembleModel(model)) {
+    return {
+      dataKey: qpfThresholdSelect.value,
+      presentation: variables.probability,
+    };
+  }
+
+  return {
+    dataKey: variableSelect.value,
+    presentation: variables[variableSelect.value],
+  };
+}
+
+function syncForecastControls() {
+  const ensembleSelected = isEnsembleModel();
+  variableSelectField.hidden = ensembleSelected;
+  qpfThresholdField.hidden = !ensembleSelected;
+  cityForecastSection.hidden = ensembleSelected;
+}
+
 function renderFrame() {
   const model = models[modelSelect.value] || models.ifs;
-  const variableKey = variableSelect.value;
-  const variable = variables[variableKey];
-  const variableData = activeAnimation.variables[variableKey];
+  const product = selectedProduct(model);
+  const variableData = activeAnimation.variables[product.dataKey];
   const frame = activeFrames[currentFrameIndex];
   const clipId = `india-animation-clip-${model.key}`;
+  const ensembleSelected = isEnsembleModel(model);
 
   animationModelLabel.textContent = activeAnimation.model || model.label;
-  animationTitle.textContent = `${variable.label} Animation`;
-  animationValidTime.textContent = `Valid: ${formatTime(frame.valid_time)}`;
-  frameStepLabel.textContent = `+${frame.step} h`;
+  animationTitle.textContent = ensembleSelected
+    ? `24-hour QPF Probability: \u2265 ${variableData.threshold_mm} mm`
+    : `${product.presentation.label} Animation`;
+  animationValidTime.textContent = ensembleSelected
+    ? `Valid: ${formatTime(frame.start_time)} to ${formatTime(frame.valid_time)}`
+    : `Valid: ${formatTime(frame.valid_time)}`;
+  frameStepLabel.textContent = ensembleSelected
+    ? `+${frame.start_step} to +${frame.end_step} h`
+    : `+${frame.step} h`;
   frameSlider.max = String(activeFrames.length - 1);
   frameSlider.value = String(currentFrameIndex);
-  animationLegend.innerHTML = renderLegend(variableKey, variableData);
+  animationLegend.innerHTML = renderLegend(
+    ensembleSelected ? "probability" : product.dataKey,
+    variableData,
+  );
 
   animationMap.innerHTML = `
-    <svg class="india-map animation-india-map" viewBox="0 0 1000 1030" role="img" aria-label="${variable.label} forecast animation for India">
+    <svg class="india-map animation-india-map" viewBox="0 0 1000 1030" role="img" aria-label="${product.presentation.label} forecast animation for India">
       <defs>
         <clipPath id="${clipId}">
           ${boundaryPaths()}
@@ -335,8 +386,8 @@ function renderCityDetails(points) {
 
 async function loadForecast() {
   const model = models[modelSelect.value] || models.ifs;
-  const variableKey = variableSelect.value;
-  setStatus(`Loading ${model.label} ${variables[variableKey].label.toLowerCase()} animation...`);
+  const product = selectedProduct(model);
+  setStatus(`Loading ${model.label} ${product.presentation.label.toLowerCase()} animation...`);
   stopAnimation();
 
   try {
@@ -344,7 +395,7 @@ async function loadForecast() {
     const modelData = await fetchModelData(model);
     activeForecast = modelData.forecast;
     activeAnimation = modelData.animation;
-    activeFrames = activeAnimation.variables[variableKey].frames;
+    activeFrames = activeAnimation.variables[product.dataKey]?.frames || [];
     currentFrameIndex = 0;
 
     if (!activeFrames.length) {
@@ -352,9 +403,13 @@ async function loadForecast() {
     }
 
     renderFrame();
-    renderCityDetails(activeForecast.city_points || []);
+    if (activeForecast) {
+      renderCityDetails(activeForecast.city_points || []);
+    } else {
+      cityDetailGrid.innerHTML = "";
+    }
     setStatus(
-      `${activeAnimation.model} ${variables[variableKey].label.toLowerCase()} animation loaded. Run: ${formatRunTime(activeAnimation.run_time_utc)}.`,
+      `${activeAnimation.model} ${product.presentation.label.toLowerCase()} animation loaded. Run: ${formatRunTime(activeAnimation.run_time_utc)}.`,
     );
     updatePlayback();
   } catch (error) {
@@ -379,8 +434,12 @@ forecastForm.addEventListener("submit", (event) => {
   loadForecast();
 });
 
-modelSelect.addEventListener("change", loadForecast);
+modelSelect.addEventListener("change", () => {
+  syncForecastControls();
+  loadForecast();
+});
 variableSelect.addEventListener("change", loadForecast);
+qpfThresholdSelect.addEventListener("change", loadForecast);
 
 frameSlider.addEventListener("input", () => {
   isPlaying = false;
@@ -424,4 +483,5 @@ document.addEventListener("keydown", (event) => {
 });
 
 populateCities();
+syncForecastControls();
 loadForecast();
